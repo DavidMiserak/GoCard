@@ -1,9 +1,10 @@
 # GoCard: A File-Based Spaced Repetition System
 
-![GoCard Logo](assets/gocard-logo.webp)
-
 [![Go Report Card](https://goreportcard.com/badge/github.com/DavidMiserak/GoCard)](https://goreportcard.com/report/github.com/DavidMiserak/GoCard)
+[![Build Status](https://github.com/DavidMiserak/GoCard/workflows/Go/badge.svg)](https://github.com/DavidMiserak/GoCard/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
+![GoCard Logo](assets/gocard-logo.webp)
 
 GoCard is a lightweight, file-based spaced repetition system (SRS)
 built in Go. It uses plain Markdown files organized in directories as
