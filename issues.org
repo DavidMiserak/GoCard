@@ -1,0 +1,417 @@
+#+TITLE: GoCard Project Issues
+#+AUTHOR: David Miserak
+#+DATE: 2025-03-21
+#+PROPERTY: priority (A B C)
+#+PROPERTY: status "TODO" "IN-PROGRESS" "REVIEW" "DONE"
+#+PROPERTY: effort_estimate 1:00 2:00 4:00 8:00 16:00 24:00 40:00
+#+COLUMNS: %25ITEM %TODO %PRIORITY %TAGS %EFFORT
+
+* Core Functionality [0/4]
+** TODO [#A] Issue 1: File-Based Storage Implementation 
+:PROPERTIES:
+:EFFORT:   16:00
+:END:
+
+*** User Story
+As a user who values text-based workflows,  
+I need a system that stores flashcards as Markdown files in regular directories  
+So that I can easily edit, track, and back up my knowledge base with standard tools.
+
+*** Details and Assumptions
+- Each card should be stored as a single Markdown file
+- Files should follow the specified format with YAML frontmatter and Question/Answer sections
+- Directory structure should represent deck hierarchy
+- Changes to files should be reflected in the application
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given the application is running
+When I create a new card through the application
+Then a properly formatted Markdown file should be created in the specified directory
+
+Given a properly formatted Markdown file exists in the watched directory
+When I launch the application
+Then the card should be loaded and available for review
+
+Given I make changes to a card file using an external text editor
+When the application is running or restarted
+Then those changes should be reflected in the card's content
+#+END_SRC
+
+*** Implementation Notes
+- Create Card struct with required fields
+- Implement file reading/writing functions
+- Support YAML frontmatter parsing
+- Add basic markdown parsing
+- Create file path handling utilities
+
+*** Related Issues
+None
+
+** TODO [#A] Issue 2: Implement SM-2 Spaced Repetition Algorithm
+:PROPERTIES:
+:EFFORT:   8:00
+:END:
+
+*** User Story
+As a learner,  
+I need an efficient spaced repetition system  
+So that I can optimize my memory retention and learning efficiency.
+
+*** Details and Assumptions
+- Implement the SM-2 algorithm similar to Anki
+- Track review intervals, last review date, and difficulty in file metadata
+- Support 0-5 rating system for card difficulty
+- Calculate next review date based on performance
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given I am reviewing a card
+When I rate it with a difficulty score of 0-5
+Then the review interval should be calculated according to SM-2 algorithm
+
+Given a card has been reviewed previously
+When I open the application on a future date
+Then I should only see cards that are due for review
+
+Given I review a card successfully multiple times
+When I continue using the application
+Then the interval between reviews should increase appropriately
+#+END_SRC
+
+*** Implementation Notes
+- Research SM-2 algorithm implementation details
+- Add interval calculation functions
+- Integrate with card metadata
+- Add review history tracking
+
+*** Related Issues
+- Issue 1: File-Based Storage Implementation
+
+** TODO [#A] Issue 14: Implement Real-time File Watching with fsnotify
+:PROPERTIES:
+:EFFORT:   8:00
+:END:
+
+*** User Story
+As a user who edits flashcards with external text editors,  
+I need GoCard to automatically detect and reload cards when they change on disk  
+So that I can seamlessly work with my preferred editor and see changes immediately in the application.
+
+*** Details and Assumptions
+- Users may edit, create, or delete card files outside the application
+- We need to monitor the entire directory tree recursively
+- Changes should be detected in near real-time
+- The application needs to handle various file events:
+  - Creation of new card files
+  - Modification of existing card files
+  - Deletion of card files
+  - File renaming
+  - Moving files between directories
+- The current implementation has a placeholder for file watching that needs to be implemented
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given I have GoCard running
+When I create a new markdown file in the watched directory using an external editor
+Then the application should detect the new file and add it to the card collection
+
+Given I have GoCard running
+When I modify the content of an existing card file using an external editor
+Then the application should detect the change and update the card in memory
+
+Given I have GoCard running
+When I delete a card file using an external text editor or file manager
+Then the application should detect the deletion and remove the card from memory
+
+Given I have GoCard running
+When I rename a card file using an external application
+Then the application should handle this correctly by removing the old card and adding the new one
+
+Given I have multiple levels of subdirectories
+When I add, modify, or delete files in any subdirectory
+Then the application should correctly detect and handle these changes
+#+END_SRC
+
+*** Implementation Notes
+- Use the fsnotify package to watch for file system events
+- Implement recursive directory watching (fsnotify only watches a single directory by default)
+- Add debouncing to prevent duplicate events (files being saved may trigger multiple events)
+- Handle edge cases like:
+  - Files being edited while the application is loading
+  - Temporary files created by text editors
+  - Moving files between watched directories
+- Ensure efficient processing of file events to avoid performance issues
+- Consider adding a configuration option to enable/disable file watching
+
+*** Related Issues
+- Issue 1: File-Based Storage Implementation
+
+** TODO [#A] Issue 15: Implement Deck Organization through Directory Structure
+:PROPERTIES:
+:EFFORT:   16:00
+:END:
+
+*** User Story
+As a GoCard user,  
+I need to organize my flashcards into logical groupings (decks) using directories  
+So that I can manage my learning materials by topic, difficulty, or other classification schemes.
+
+*** Details and Assumptions
+- Directories in the file system should represent decks in the application
+- Subdirectories should represent sub-decks (nested organization)
+- Users should be able to:
+  - Create new decks (directories)
+  - Move cards between decks
+  - View cards by deck
+  - Get statistics per deck
+  - Filter review sessions by deck
+- The directory structure is already partially supported in the file loading logic
+- Need to add explicit deck management features to the application
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given I am using the application
+When I create a new deck
+Then a new directory should be created in the file system
+
+Given I have multiple decks
+When I select a specific deck
+Then I should only see cards from that deck and its sub-decks
+
+Given I am viewing a card
+When I move it to a different deck
+Then the card's file should be moved to the corresponding directory
+
+Given a nested directory structure exists
+When I load the application
+Then the deck hierarchy should match the directory structure
+
+Given I have cards in various decks
+When I start a review session
+Then I should be able to filter the session to specific decks
+
+Given I have multiple decks
+When I view statistics
+Then I should be able to see statistics broken down by deck
+#+END_SRC
+
+*** Implementation Notes
+- Extend the current CardStore to track deck information
+- Add methods for creating, renaming, and deleting decks
+- Implement deck selection and filtering in the UI
+- Ensure moving cards between decks handles file operations correctly
+- Make sure file paths are updated correctly when cards are moved
+- Consider adding deck metadata (perhaps as a special .deck.md file in each directory)
+- Implement proper error handling for file operations across directories
+- Consider platform-specific path handling for cross-platform compatibility
+- Add a visual representation of the deck hierarchy in the UI
+
+*** Example Structures
+Current:
+#+BEGIN_SRC
+CardStore
+└── map[filepath]*Card
+#+END_SRC
+
+Proposed:
+#+BEGIN_SRC
+CardStore
+├── map[filepath]*Card  // All cards
+└── map[deckPath]*Deck  // Organized by deck
+    
+Deck
+├── Name           // Deck name (directory name)
+├── Path           // Directory path
+├── Cards          // Cards directly in this deck
+├── SubDecks       // Child decks
+└── ParentDeck     // Parent deck (optional)
+#+END_SRC
+
+*** Related Issues
+- Issue 1: File-Based Storage Implementation
+- Issue 3: Basic Card Navigation and Review Interface
+- Issue 6: Search and Filter Functionality
+* Enhanced Features [0/3]
+** TODO [#B] Issue 13: Convert to Goldmark for Markdown Processing
+:PROPERTIES:
+:EFFORT:   8:00
+:END:
+
+*** User Story
+As a developer of GoCard,  
+I need to upgrade the markdown parsing to use the Goldmark library  
+So that we can properly render rich markdown content with consistent parsing and better extensibility.
+
+*** Details and Assumptions
+- The current implementation uses a basic string-splitting approach for parsing markdown
+- Goldmark is mentioned in the README as the intended markdown renderer
+- Features needed:
+  - Full markdown syntax support (tables, code blocks, etc.)
+  - Support for syntax highlighting via Chroma integration
+  - Extension capability for custom card formatting
+  - Proper handling of markdown edge cases
+- We need to maintain the YAML frontmatter handling separate from markdown content
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given a markdown file with complex formatting
+When the file is loaded by the application
+Then all markdown elements should be correctly parsed and represented in the Card struct
+
+Given a card with rich markdown content in the question or answer
+When the card is saved to disk
+Then the markdown should be properly preserved in the output file
+
+Given a card with code blocks using different programming languages
+When the card is rendered
+Then the code should maintain proper formatting and be ready for syntax highlighting
+
+Given markdown content with special characters or edge cases
+When the content is parsed
+Then the parser should handle these cases correctly without data loss
+#+END_SRC
+
+*** Implementation Notes
+- Use Goldmark as the markdown parser
+- Separate the YAML frontmatter parsing from the markdown content parsing
+- Consider using the Goldmark YAML frontmatter extension
+- Integrate with Chroma for syntax highlighting as described in the README
+- Update tests to verify proper parsing of complex markdown elements
+
+*** Related Issues
+- Issue 1: File-Based Storage Implementation
+- Issue 4: Markdown Rendering with Code Syntax Highlighting
+
+** TODO [#B] Issue 3: Basic Card Navigation and Review Interface
+:PROPERTIES:
+:EFFORT:   24:00
+:END:
+
+*** User Story
+As a user,  
+I need a simple interface to navigate and review my flashcards  
+So that I can focus on learning without distractions.
+
+*** Details and Assumptions
+- Show question first, then reveal answer on command
+- Support core keyboard shortcuts (space, 0-5, n, e, d, q)
+- Display card metadata and progress information
+- Provide simple navigation between due cards
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given I am viewing a question
+When I press space
+Then the answer should be revealed
+
+Given I am viewing a card's answer
+When I press a number from 0-5
+Then the card should be rated and I should move to the next due card
+
+Given there are multiple due cards
+When I complete a review session
+Then I should see a summary of my progress
+#+END_SRC
+
+*** Implementation Notes
+- Use Fyne GUI toolkit for Go as mentioned in README
+- Implement keyboard shortcut handling
+- Create simple card display UI
+- Add progress tracking for review sessions
+- Create session summary view
+
+*** Related Issues
+- Issue 1: File-Based Storage Implementation
+- Issue 2: Implement SM-2 Spaced Repetition Algorithm
+** TODO [#B] Issue 4: Markdown Rendering with Code Syntax Highlighting
+** TODO [#B] Issue 6: Search and Filter Functionality
+:PROPERTIES:
+:EFFORT:   16:00
+:END:
+
+*** User Story
+As a user with many flashcards,  
+I need to be able to search and filter my card collection  
+So that I can quickly find specific cards or focus on particular topics.
+
+*** Details and Assumptions
+- Search by card content, title, or tags
+- Filter by deck/directory
+- Filter by due date, creation date, or difficulty
+- Support for combining search criteria
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given I have a collection of cards
+When I enter a search term
+Then only cards matching that term should be displayed
+
+Given I have cards with various tags
+When I filter by a specific tag
+Then only cards with that tag should be shown
+
+Given I have cards in different directories
+When I select a specific directory
+Then only cards from that directory should be displayed
+#+END_SRC
+
+*** Implementation Notes
+- Implement text search functionality 
+- Add tag-based filtering
+- Implement metadata-based filtering (due date, creation date, difficulty)
+- Create UI components for search and filter controls
+- Optimize search for large collections
+
+*** Related Issues
+- Issue 1: File-Based Storage Implementation
+- Issue 4: Implement Deck Organization through Directory Structure
+
+* Advanced Features [0/4]
+** TODO [#C] Issue 7: Import/Export Compatibility
+:PROPERTIES:
+:EFFORT:   24:00
+:END:
+
+*** User Story
+As a user with existing flashcard collections,  
+I need to import and export cards in common formats  
+So that I can migrate my knowledge base between different systems.
+
+*** Details and Assumptions
+- Support importing/exporting Anki packages (.apkg)
+- Support plain text imports with common formats
+- Preserve metadata when possible during import/export
+- Handle batch operations for multiple cards
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given I have an Anki package file
+When I import it into GoCard
+Then the cards should be converted to Markdown files with appropriate metadata
+
+Given I have a collection of GoCard markdown files
+When I export them to an Anki package
+Then the resulting file should be importable into Anki
+
+Given I perform an import operation
+When there are conflicts or format issues
+Then I should receive clear error messages and options to resolve issues
+#+END_SRC
+
+*** Implementation Notes
+- Research Anki package format
+- Find or create Go libraries for handling .apkg files
+- Implement mapping between Anki fields and GoCard format
+- Add import/export UI
+- Create conflict resolution handling
+
+*** Related Issues
+- Issue 1: File-Based Storage Implementation
+
+** TODO [#C] Issue 8: Customizable Styling and Themes
+** TODO [#C] Issue 9: Code Testing Integration
+** TODO [#C] Issue 10: Cross-Platform Build Configuration
+
+* Infrastructure [0/1]
+** TODO [#B] Issue 11: Configuration File Management
