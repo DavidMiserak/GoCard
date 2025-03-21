@@ -15,15 +15,14 @@ with text files and version control.
 
 - **File-Based Storage**: All flashcards are stored as Markdown files in regular directories
 - **Git-Friendly**: Easily track changes, collaborate, and back up your knowledge base
+- **Terminal Interface**: Clean, distraction-free TUI for focused learning
 - **Markdown Support**: Full Markdown rendering with code syntax highlighting
 - **Cross-Platform**: Works on Linux, macOS, and Windows
 - **Spaced Repetition Algorithm**: Implements the SM-2 algorithm for efficient learning
 - **Code-Focused**: Special features for programming-related cards:
   - Syntax highlighting for 50+ languages
   - Side-by-side diff view for comparing code
-  - Built-in testing for executable code snippets
-- **Customizable Styling**: Themes and CSS customization options
-- **Import/Export**: Compatible with Anki packages (.apkg) and plain text formats
+- **Session Statistics**: Track your learning progress with detailed review stats
 
 ## Installation
 
@@ -171,31 +170,57 @@ scale of 0-5:
 The review intervals are calculated based on your performance and
 stored in the markdown file's frontmatter.
 
+## Terminal Interface
+
+GoCard provides a clean, minimalist terminal interface optimized for focused learning:
+
+- **Distraction-Free**: Simple design that lets you focus on learning
+- **Markdown Rendering**: Beautiful rendering of card content with syntax highlighting
+- **Keyboard-Driven**: Efficient workflow with intuitive keyboard shortcuts
+- **Progress Tracking**: Monitor your review session progress
+- **Session Statistics**: Summary view after completing a review session
+
 ## Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
-| `Space` | Show answer |
-| `0-5` | Rate card difficulty |
-| `e` | Edit current card |
-| `n` | Create new card |
-| `d` | Delete current card |
-| `t` | Add/edit tags |
-| `s` | Search cards |
-| `q` | Quit |
+| Key     | Action              |
+|---------|---------------------|
+| `Space` | Show answer         |
+| `0-5`   | Rate card difficulty|
+| `?`     | Toggle help         |
+| `q`     | Quit                |
+
+Additional shortcuts planned for future versions:
+- `e` - Edit current card
+- `n` - Create new card
+- `d` - Delete current card
+- `t` - Add/edit tags
+- `s` - Search cards
+
+## Review Process
+
+The review process follows a simple flow:
+
+1. Cards due for review will be loaded automatically
+2. For each card:
+   - The question is shown first
+   - Press `Space` to reveal the answer
+   - Rate your recall from 0-5:
+     - `0-2`: Difficult/incorrect (short interval)
+     - `3`: Correct but required effort (moderate interval increase)
+     - `4-5`: Easy (longer interval increase)
+3. After reviewing all due cards, a summary is displayed showing:
+   - Number of cards reviewed
+   - Current card statistics (new, young, mature)
+   - Next scheduled review date
 
 ## Configuration
 
 Configuration is stored in `~/.gocard.yaml`:
 
 ```yaml
-theme: dark
-code_highlight_theme: monokai
 default_cards_dir: ~/gocard
-card_display:
-  font_size: 16
-  max_width: 800
-  code_font: "Fira Code"
+theme: "auto"  # auto, light, dark
+highlight_theme: "monokai"  # code highlighting theme
 spaced_repetition:
   easy_bonus: 1.3
   interval_modifier: 1.0
@@ -213,6 +238,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgements
 
 - Inspired by Anki and SuperMemo
-- Built with [Fyne](https://fyne.io/) GUI toolkit for Go
-- Markdown rendering via [Goldmark](https://github.com/yuin/goldmark)
+- Built with [Bubble Tea](https://github.com/charmbracelet/bubbletea) terminal UI framework
+- Markdown rendering via [Goldmark](https://github.com/yuin/goldmark) and [Glamour](https://github.com/charmbracelet/glamour)
+- Terminal styling with [Lip Gloss](https://github.com/charmbracelet/lipgloss)
 - Code syntax highlighting via [Chroma](https://github.com/alecthomas/chroma)
