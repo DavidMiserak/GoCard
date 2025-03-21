@@ -18,7 +18,9 @@ import (
 func main() {
 	// Define command-line flags
 	var useTUI bool
-	flag.BoolVar(&useTUI, "tui", false, "Use terminal UI mode")
+	var exampleMode bool
+	flag.BoolVar(&useTUI, "tui", true, "Use terminal UI mode")
+	flag.BoolVar(&exampleMode, "example", false, "Run in example mode with sample cards")
 	flag.Parse()
 
 	// Create or use the default directory for flashcards
@@ -40,6 +42,14 @@ func main() {
 		log.Fatalf("Failed to initialize card store: %v", err)
 	}
 
+	// If example mode is enabled, create demo decks and cards
+	if exampleMode {
+		fmt.Printf("Creating example decks and cards in: %s\n", cardsDir)
+		if err := createExampleDecksAndCards(store); err != nil {
+			log.Fatalf("Failed to create example content: %v", err)
+		}
+	}
+
 	// If TUI mode is enabled, launch the terminal UI
 	if useTUI {
 		fmt.Printf("Starting GoCard terminal UI with cards from: %s\n", cardsDir)
@@ -51,6 +61,119 @@ func main() {
 
 	// Otherwise, run the original example code
 	runExampleMode(store)
+}
+
+// createExampleDecksAndCards creates sample decks and cards for demo purposes
+func createExampleDecksAndCards(store *storage.CardStore) error {
+	// Create main category decks
+	algorithmsDeck, err := store.CreateDeck("Algorithms", nil)
+	if err != nil {
+		return fmt.Errorf("failed to create algorithms deck: %w", err)
+	}
+
+	programmingDeck, err := store.CreateDeck("Programming", nil)
+	if err != nil {
+		return fmt.Errorf("failed to create programming deck: %w", err)
+	}
+
+	languagesDeck, err := store.CreateDeck("Languages", nil)
+	if err != nil {
+		return fmt.Errorf("failed to create languages deck: %w", err)
+	}
+
+	// Create sub-decks for algorithms
+	sortingDeck, err := store.CreateDeck("Sorting", algorithmsDeck)
+	if err != nil {
+		return fmt.Errorf("failed to create sorting deck: %w", err)
+	}
+
+	searchingDeck, err := store.CreateDeck("Searching", algorithmsDeck)
+	if err != nil {
+		return fmt.Errorf("failed to create searching deck: %w", err)
+	}
+
+	// Create sub-decks for programming
+	goDeck, err := store.CreateDeck("Go", programmingDeck)
+	if err != nil {
+		return fmt.Errorf("failed to create go deck: %w", err)
+	}
+
+	pythonDeck, err := store.CreateDeck("Python", programmingDeck)
+	if err != nil {
+		return fmt.Errorf("failed to create python deck: %w", err)
+	}
+
+	// Create some example cards in each deck
+
+	// Binary Search card
+	_, err = store.CreateCardInDeck(
+		"Binary Search",
+		"Explain the binary search algorithm and its time complexity.",
+		"Binary search is an O(log n) algorithm that works on sorted arrays by repeatedly dividing the search interval in half.\n\n```\nfunction binarySearch(arr, target) {\n    let left = 0;\n    let right = arr.length - 1;\n    \n    while (left <= right) {\n        const mid = Math.floor((left + right) / 2);\n        \n        if (arr[mid] === target) {\n            return mid;\n        } else if (arr[mid] < target) {\n            left = mid + 1;\n        } else {\n            right = mid - 1;\n        }\n    }\n    \n    return -1; // Target not found\n}\n```",
+		[]string{"algorithms", "searching", "O(log n)"},
+		searchingDeck,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create binary search card: %w", err)
+	}
+
+	// Quick Sort card
+	quickSortCard, err := store.CreateCardInDeck(
+		"Quick Sort",
+		"How does Quick Sort work and what is its average time complexity?",
+		"Quick sort is a divide-and-conquer algorithm that picks a pivot element and partitions the array around it. The average time complexity is O(n log n).\n\n```\nfunction quickSort(arr, left = 0, right = arr.length - 1) {\n    if (left < right) {\n        const pivotIndex = partition(arr, left, right);\n        quickSort(arr, left, pivotIndex - 1);\n        quickSort(arr, pivotIndex + 1, right);\n    }\n    return arr;\n}\n\nfunction partition(arr, left, right) {\n    const pivot = arr[right];\n    let i = left - 1;\n    \n    for (let j = left; j < right; j++) {\n        if (arr[j] <= pivot) {\n            i++;\n            [arr[i], arr[j]] = [arr[j], arr[i]];\n        }\n    }\n    \n    [arr[i + 1], arr[right]] = [arr[right], arr[i + 1]];\n    return i + 1;\n}\n```",
+		[]string{"algorithms", "sorting", "O(n log n)"},
+		sortingDeck,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create quick sort card: %w", err)
+	}
+
+	// Modify the Quick Sort card to simulate a review history
+	quickSortCard.LastReviewed = time.Now().AddDate(0, 0, -2)
+	quickSortCard.ReviewInterval = 4
+	quickSortCard.Difficulty = 4
+	if err := store.SaveCard(quickSortCard); err != nil {
+		return fmt.Errorf("failed to update quick sort card: %w", err)
+	}
+
+	// Go Channels card
+	_, err = store.CreateCardInDeck(
+		"Go Channels",
+		"What are channels in Go and how are they used for concurrency?",
+		"Channels in Go are a typed conduit through which you can send and receive values with the channel operator `<-`. They synchronize goroutines and enable communication between them.\n\n```go\nfunc main() {\n    // Create a channel\n    messages := make(chan string)\n\n    // Send a value into a channel\n    go func() { messages <- \"hello\" }()\n\n    // Receive a value from a channel\n    msg := <-messages\n    fmt.Println(msg) // Prints: hello\n}\n```\n\nChannels can be buffered or unbuffered. Unbuffered channels block the sender until the receiver receives the value. Buffered channels don't block the sender until the buffer is full.",
+		[]string{"go", "concurrency", "channels"},
+		goDeck,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create go channels card: %w", err)
+	}
+
+	// Python Generators card
+	_, err = store.CreateCardInDeck(
+		"Python Generators",
+		"What are generators in Python and what advantages do they offer?",
+		"Generators in Python are a simple way of creating iterators using functions with the `yield` statement. They allow you to iterate over a potentially large sequence without creating the entire sequence in memory at once.\n\n```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\n# Use the generator\nfor num in fibonacci(10):\n    print(num)\n```\n\nAdvantages of generators:\n1. Memory efficient - values are produced one at a time\n2. Can represent infinite sequences\n3. Lazy evaluation - values are computed only when needed\n4. Simpler code than creating iterator classes",
+		[]string{"python", "generators", "iterators"},
+		pythonDeck,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create python generators card: %w", err)
+	}
+
+	// Spanish Vocabulary card
+	_, err = store.CreateCardInDeck(
+		"Basic Spanish Greetings",
+		"What are the basic greetings in Spanish?",
+		"- Hello = Hola\n- Good morning = Buenos días\n- Good afternoon = Buenas tardes\n- Good evening/night = Buenas noches\n- How are you? = ¿Cómo estás?\n- I'm fine, thank you = Estoy bien, gracias\n- Nice to meet you = Mucho gusto\n- Goodbye = Adiós\n- See you later = Hasta luego\n- See you tomorrow = Hasta mañana",
+		[]string{"spanish", "vocabulary", "greetings"},
+		languagesDeck,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create spanish greetings card: %w", err)
+	}
+
+	return nil
 }
 
 // runExampleMode runs the original example code from the previous main function
