@@ -457,5 +457,3 @@ func RunTUI(store *CardStore) error {
 	_, err := p.Run()
 	return err
 }
-
-// No longer needed since we're using golang.org/x/term package
