@@ -461,8 +461,163 @@ Then I should receive clear error messages and options to resolve issues
 - Issue 1: File-Based Storage Implementation
 
 ** TODO [#C] Issue 8: Customizable Styling and Themes
+:PROPERTIES:
+:EFFORT:   8:00
+:END:
+
+*** User Story
+As a user with specific visual preferences,
+I need to be able to customize the application's appearance
+So that I can create a comfortable learning environment.
+
+*** Details and Assumptions
+- Implement light and dark themes
+- Allow customization of fonts, sizes, and colors
+- Support for different code highlighting themes
+- Store preferences in configuration file
+- Provide sensible defaults for all customizable elements
+- Support for high-contrast mode for accessibility
+- Changes should apply immediately without requiring restart
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given I open the preferences dialog
+When I select a different theme
+Then the application's appearance should update accordingly
+
+Given I modify font settings
+When I view cards
+Then the new font settings should be applied
+
+Given I have set custom preferences
+When I restart the application
+Then my preferences should be preserved
+
+Given I select a different code highlighting theme
+When viewing a card with code blocks
+Then the code should be highlighted according to the selected theme
+#+END_SRC
+
+*** Implementation Notes
+- Create theme definition structure
+- Implement theme switching mechanism
+- Use CSS-like styling system for customization
+- Add preferences UI with live preview
+- Include at least 3 built-in themes (light, dark, high-contrast)
+- Store theme configurations in the application config file
+- Consider supporting custom CSS for advanced users
+- Ensure all UI elements follow the theme consistently
+
+*** Related Issues
+- Issue 11: Configuration File Management
+- Issue 4: Markdown Rendering with Code Syntax Highlighting
+
 ** TODO [#C] Issue 9: Code Testing Integration
+:PROPERTIES:
+:EFFORT:   24:00
+:END:
+
+*** User Story
+As a developer learning programming concepts,
+I need to be able to test code snippets directly from flashcards
+So that I can verify my understanding through execution.
+
+*** Details and Assumptions
+- Support running code snippets in common languages
+- Display execution results
+- Handle basic input/output for testing
+- Implement sandboxing for security
+- Support for at least Python, JavaScript, and Go
+- Allow for custom test cases
+- Provide execution timeout to prevent infinite loops
+- Show error messages in a user-friendly format
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given a card contains an executable code snippet
+When I click "Run Code"
+Then the code should execute and display the results
+
+Given a code snippet requires input
+When I run the code
+Then I should be prompted for input values
+
+Given a code snippet execution results in an error
+When I run the code
+Then I should see a clear error message explaining the issue
+
+Given a code snippet is in a supported language
+When I modify the code in the viewer
+Then I should be able to run the modified version without changing the original card
+#+END_SRC
+
+*** Implementation Notes
+- Research code execution options (local vs. remote execution)
+- Implement language-specific execution environments
+- Create secure sandboxing to prevent malicious code execution
+- Add UI controls for code execution and input/output
+- Consider using Docker containers for language isolation
+- Implement caching of execution environments for better performance
+- Add support for test cases that verify expected outputs
+- Include execution statistics (runtime, memory usage)
+
+*** Related Issues
+- Issue 4: Markdown Rendering with Code Syntax Highlighting
+- Issue 10: Cross-Platform Build Configuration
+
 ** TODO [#C] Issue 10: Cross-Platform Build Configuration
+:PROPERTIES:
+:EFFORT:   16:00
+:END:
+
+*** User Story
+As a user on various operating systems,
+I need GoCard to run seamlessly on my platform of choice
+So that I can use it regardless of my operating system.
+
+*** Details and Assumptions
+- Support for Linux, macOS, and Windows
+- Consistent user experience across platforms
+- Appropriate installation methods for each OS
+- Handle platform-specific file system differences
+- Ensure keyboard shortcuts work consistently
+- Address platform-specific UI rendering differences
+- Package the application appropriately for each platform
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given development is complete
+When building for Linux, macOS, and Windows
+Then the application should compile and run without platform-specific bugs
+
+Given installation instructions for each platform
+When a user follows them
+Then the application should install correctly and be ready to use
+
+Given the application is running on different platforms
+When performing the same actions
+Then the behavior should be consistent across platforms
+
+Given platform-specific conventions (e.g., keyboard shortcuts)
+When using the application on that platform
+Then the application should follow those conventions
+#+END_SRC
+
+*** Implementation Notes
+- Set up cross-platform build pipeline
+- Create OS-specific installation packages:
+  - .deb/.rpm for Linux
+  - .dmg/.pkg for macOS
+  - .msi/.exe for Windows
+- Use Fyne's cross-platform capabilities
+- Implement file path handling that works across systems
+- Test UI rendering on all target platforms
+- Create platform-specific fallbacks where needed
+- Document platform-specific considerations
+- Consider CI/CD setup for automated cross-platform builds
+
+*** Related Issues
+- Issue 11: Configuration File Management
 
 * Infrastructure [0/1]
 ** TODO [#B] Issue 11: Configuration File Management
