@@ -1,7 +1,7 @@
 repos:
   # Check for conventional commit messages
   - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v3.4.0
+    rev: v4.0.0
     hooks:
     - id: conventional-pre-commit
       stages: [commit-msg]
@@ -20,13 +20,21 @@ repos:
       args: ['--fix=lf']
     - id: check-merge-conflict
 
+  # Go specific checks
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+    - id: go-fmt
+    - id: go-vet
+    - id: go-unit-tests
+
   # Search for problematic terms in the text
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
     hooks:
     - id: codespell
       args: ['--ignore-words=.codespellignore']
-      files: '\.(tex|md)$'
+      files: '\.(org|md|go)$'  # Added go files for checking
 
   # Optional: Lint Markdown files if you have any
   - repo: https://github.com/igorshubovych/markdownlint-cli
@@ -35,3 +43,11 @@ repos:
     - id: markdownlint
       args: ["--config", ".markdownlint.yaml"]
       files: '\.(md)$'
+
+  # Detect secrets
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+    - id: detect-secrets
+      args: ['--baseline', '.secrets.baseline']
+      exclude: go\.(mod|sum)$
