@@ -82,7 +82,7 @@ jobs:
       run: go mod download
 
     - name: Build
-      run: go build -v ./...
+      run: go build -v ./cmd/gocard
 
   # Cross-platform build job
   cross-build:
@@ -127,7 +127,7 @@ jobs:
       run: go mod download
 
     - name: Build
-      run: go build -v -o ${{ matrix.artifact_name }} .
+      run: go build -v -o ${{ matrix.artifact_name }} ./cmd/gocard
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v4

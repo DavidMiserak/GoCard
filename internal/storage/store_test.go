@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 
@@ -107,9 +108,9 @@ func TestCardStore(t *testing.T) {
 	// Create a few test cards
 	for i := 0; i < 3; i++ {
 		_, err := store.CreateCard(
-			fmt.Sprintf("Test Card %d", i),
-			fmt.Sprintf("Question %d", i),
-			fmt.Sprintf("Answer %d", i),
+			"Test Card"+strconv.Itoa(i),
+			"Question "+strconv.Itoa(i),
+			"Answer "+strconv.Itoa(i),
 			[]string{"test"},
 		)
 		if err != nil {

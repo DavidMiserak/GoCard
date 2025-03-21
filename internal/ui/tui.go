@@ -243,7 +243,7 @@ func (m *model) renderSessionSummary() {
 
 	// Get stats from the card store
 	stats := m.store.GetReviewStats()
-	content.WriteString(fmt.Sprintf("\nCard Statistics:\n"))
+	content.WriteString("\nCard Statistics:\n")
 	content.WriteString(fmt.Sprintf("- Total cards: %d\n", stats["total_cards"]))
 	content.WriteString(fmt.Sprintf("- Due cards remaining: %d\n", stats["due_cards"]))
 	content.WriteString(fmt.Sprintf("- New cards: %d\n", stats["new_cards"]))

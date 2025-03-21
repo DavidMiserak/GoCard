@@ -69,7 +69,7 @@ jobs:
       run: go mod download
 
     - name: Build
-      run: go build -v -ldflags="-X 'main.Version=$(echo ${{ github.ref_name }} | sed 's/^v//')'" -o ${{ matrix.artifact_name }} .
+      run: go build -v -ldflags="-X 'main.Version=$(echo ${{ github.ref_name }} | sed 's/^v//')'" -o ${{ matrix.artifact_name }} ./cmd/gocard
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
