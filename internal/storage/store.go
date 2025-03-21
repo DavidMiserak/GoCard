@@ -13,6 +13,7 @@ import (
 
 	"github.com/DavidMiserak/GoCard/internal/algorithm"
 	"github.com/DavidMiserak/GoCard/internal/card"
+	"github.com/DavidMiserak/GoCard/internal/deck"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
@@ -23,8 +24,10 @@ import (
 
 // CardStore manages the file-based storage of flashcards
 type CardStore struct {
-	RootDir string
-	Cards   map[string]*card.Card // Map of filepath to Card
+	RootDir  string                // Root directory for all decks
+	Cards    map[string]*card.Card // Map of filepath to Card
+	Decks    map[string]*deck.Deck // Map of directory path to Deck
+	RootDeck *deck.Deck            // The root deck (representing RootDir)
 }
 
 // NewCardStore creates a new CardStore with the given root directory
@@ -36,12 +39,23 @@ func NewCardStore(rootDir string) (*CardStore, error) {
 		}
 	}
 
-	store := &CardStore{
-		RootDir: rootDir,
-		Cards:   make(map[string]*card.Card),
+	// Get absolute path for the root directory to ensure consistent paths
+	absRootDir, err := filepath.Abs(rootDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get absolute path: %w", err)
 	}
 
-	// Load all cards from the directory
+	store := &CardStore{
+		RootDir: absRootDir,
+		Cards:   make(map[string]*card.Card),
+		Decks:   make(map[string]*deck.Deck),
+	}
+
+	// Create the root deck
+	store.RootDeck = deck.NewDeck(absRootDir, nil)
+	store.Decks[absRootDir] = store.RootDeck
+
+	// Load all cards and organize into deck structure
 	if err := store.LoadAllCards(); err != nil {
 		return nil, err
 	}
@@ -51,6 +65,12 @@ func NewCardStore(rootDir string) (*CardStore, error) {
 
 // LoadAllCards scans the root directory and loads all markdown files as cards
 func (s *CardStore) LoadAllCards() error {
+	// First, discover all directories and create the deck structure
+	if err := s.discoverDecks(); err != nil {
+		return err
+	}
+
+	// Then load all cards and organize them into the appropriate decks
 	return filepath.WalkDir(s.RootDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -68,6 +88,57 @@ func (s *CardStore) LoadAllCards() error {
 		}
 
 		s.Cards[path] = cardObj
+
+		// Add the card to the appropriate deck
+		dirPath := filepath.Dir(path)
+		deckObj, exists := s.Decks[dirPath]
+		if !exists {
+			// This shouldn't happen if discoverDecks worked correctly
+			return fmt.Errorf("deck not found for directory: %s", dirPath)
+		}
+		deckObj.AddCard(cardObj)
+
+		return nil
+	})
+}
+
+// discoverDecks builds the deck hierarchy by scanning directories
+func (s *CardStore) discoverDecks() error {
+	return filepath.WalkDir(s.RootDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Only process directories
+		if !d.IsDir() {
+			return nil
+		}
+
+		// Skip the root directory as we already created that deck
+		if path == s.RootDir {
+			return nil
+		}
+
+		// Create a deck for this directory
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			return fmt.Errorf("failed to get absolute path: %w", err)
+		}
+
+		// Find the parent deck
+		parentPath := filepath.Dir(absPath)
+		parentDeck, exists := s.Decks[parentPath]
+		if !exists {
+			return fmt.Errorf("parent deck not found for %s", path)
+		}
+
+		// Create the new deck
+		newDeck := deck.NewDeck(absPath, parentDeck)
+		s.Decks[absPath] = newDeck
+
+		// Add as subdeck to parent
+		parentDeck.AddSubDeck(newDeck)
+
 		return nil
 	})
 }
@@ -126,6 +197,26 @@ func (s *CardStore) SaveCard(cardObj *card.Card) error {
 
 	// Update our map
 	s.Cards[cardObj.FilePath] = cardObj
+
+	// In SaveCard method, modify the deck organization section:
+	// Update deck organization if necessary
+	dirPath := filepath.Dir(cardObj.FilePath)
+	if deckObj, exists := s.Decks[dirPath]; exists {
+		// Check if this card is already in the deck
+		found := false
+		for i, c := range deckObj.Cards {
+			if c.FilePath == cardObj.FilePath {
+				// Replace the existing card instead of adding a new one
+				deckObj.Cards[i] = cardObj
+				found = true
+				break
+			}
+		}
+		if !found {
+			deckObj.AddCard(cardObj)
+		}
+	}
+
 	return nil
 }
 
@@ -135,8 +226,258 @@ func (s *CardStore) DeleteCard(cardObj *card.Card) error {
 		return err
 	}
 
+	// Remove from the appropriate deck
+	dirPath := filepath.Dir(cardObj.FilePath)
+	if deckObj, exists := s.Decks[dirPath]; exists {
+		deckObj.RemoveCard(cardObj)
+	}
+
 	delete(s.Cards, cardObj.FilePath)
 	return nil
+}
+
+// CreateDeck creates a new deck directory
+func (s *CardStore) CreateDeck(name string, parentDeck *deck.Deck) (*deck.Deck, error) {
+	// Sanitize name for filesystem
+	sanitizedName := strings.ToLower(name)
+	sanitizedName = strings.ReplaceAll(sanitizedName, " ", "-")
+	sanitizedName = strings.ReplaceAll(sanitizedName, "/", "-")
+
+	// Determine the path for the new deck
+	var parentPath string
+	if parentDeck == nil {
+		parentDeck = s.RootDeck
+		parentPath = s.RootDir
+	} else {
+		parentPath = parentDeck.Path
+	}
+
+	deckPath := filepath.Join(parentPath, sanitizedName)
+
+	// Check if the directory already exists
+	if _, err := os.Stat(deckPath); err == nil {
+		return nil, fmt.Errorf("deck already exists: %s", deckPath)
+	}
+
+	// Create the directory
+	if err := os.MkdirAll(deckPath, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create deck directory: %w", err)
+	}
+
+	// Create the deck object
+	newDeck := deck.NewDeck(deckPath, parentDeck)
+	s.Decks[deckPath] = newDeck
+
+	// Add as subdeck to parent
+	parentDeck.AddSubDeck(newDeck)
+
+	return newDeck, nil
+}
+
+// DeleteDeck removes a deck directory and all contained cards and subdecks
+func (s *CardStore) DeleteDeck(deckObj *deck.Deck) error {
+	// Don't allow deleting the root deck
+	if deckObj == s.RootDeck {
+		return fmt.Errorf("cannot delete the root deck")
+	}
+
+	// Remove the directory and all its contents
+	if err := os.RemoveAll(deckObj.Path); err != nil {
+		return fmt.Errorf("failed to delete deck directory: %w", err)
+	}
+
+	// Remove all cards in this deck and its subdecks from our maps
+	for _, card := range deckObj.GetAllCards() {
+		delete(s.Cards, card.FilePath)
+	}
+
+	// Remove all subdecks from our map
+	for _, subDeck := range deckObj.AllDecks() {
+		if subDeck != deckObj { // Skip the deck itself, we'll remove it separately
+			delete(s.Decks, subDeck.Path)
+		}
+	}
+
+	// Remove the deck from its parent
+	if deckObj.ParentDeck != nil {
+		delete(deckObj.ParentDeck.SubDecks, deckObj.Name)
+	}
+
+	// Remove the deck from our map
+	delete(s.Decks, deckObj.Path)
+
+	return nil
+}
+
+// RenameDeck renames a deck directory
+func (s *CardStore) RenameDeck(deckObj *deck.Deck, newName string) error {
+	// Don't allow renaming the root deck
+	if deckObj == s.RootDeck {
+		return fmt.Errorf("cannot rename the root deck")
+	}
+
+	// Sanitize name for filesystem
+	sanitizedName := strings.ToLower(newName)
+	sanitizedName = strings.ReplaceAll(sanitizedName, " ", "-")
+	sanitizedName = strings.ReplaceAll(sanitizedName, "/", "-")
+
+	// Calculate the new path
+	parentPath := filepath.Dir(deckObj.Path)
+	newPath := filepath.Join(parentPath, sanitizedName)
+
+	// Check if the new path already exists
+	if _, err := os.Stat(newPath); err == nil {
+		return fmt.Errorf("deck with name %s already exists", newName)
+	}
+
+	// Rename the directory
+	if err := os.Rename(deckObj.Path, newPath); err != nil {
+		return fmt.Errorf("failed to rename deck directory: %w", err)
+	}
+
+	// Update the deck object
+	oldPath := deckObj.Path
+	deckObj.Path = newPath
+	deckObj.Name = sanitizedName
+
+	// Update the deck in our map
+	delete(s.Decks, oldPath)
+	s.Decks[newPath] = deckObj
+
+	// Update the parent deck's subdeck map
+	if deckObj.ParentDeck != nil {
+		delete(deckObj.ParentDeck.SubDecks, filepath.Base(oldPath))
+		deckObj.ParentDeck.SubDecks[sanitizedName] = deckObj
+	}
+
+	// Update paths for all cards in this deck
+	for _, cardObj := range deckObj.Cards {
+		oldCardPath := cardObj.FilePath
+		fileName := filepath.Base(oldCardPath)
+		newCardPath := filepath.Join(newPath, fileName)
+
+		// Update the card's filepath
+		cardObj.FilePath = newCardPath
+
+		// Update our card map
+		delete(s.Cards, oldCardPath)
+		s.Cards[newCardPath] = cardObj
+	}
+
+	// Recursively update paths for all subdecks and their cards
+	for _, subDeck := range deckObj.SubDecks {
+		// The recursive directory rename is handled by the OS
+		// We just need to update our internal references
+		subDeckOldPath := subDeck.Path
+		subDeckNewPath := filepath.Join(newPath, subDeck.Name)
+		subDeck.Path = subDeckNewPath
+
+		// Update the deck in our map
+		delete(s.Decks, subDeckOldPath)
+		s.Decks[subDeckNewPath] = subDeck
+
+		// Update paths for all cards in this subdeck
+		for _, cardObj := range subDeck.Cards {
+			oldCardPath := cardObj.FilePath
+			fileName := filepath.Base(oldCardPath)
+			newCardPath := filepath.Join(subDeckNewPath, fileName)
+
+			// Update the card's filepath
+			cardObj.FilePath = newCardPath
+
+			// Update our card map
+			delete(s.Cards, oldCardPath)
+			s.Cards[newCardPath] = cardObj
+		}
+	}
+
+	return nil
+}
+
+// MoveCard moves a card from one deck to another
+func (s *CardStore) MoveCard(cardObj *card.Card, targetDeck *deck.Deck) error {
+	// Get the current deck
+	currentDirPath := filepath.Dir(cardObj.FilePath)
+	currentDeck, exists := s.Decks[currentDirPath]
+	if !exists {
+		return fmt.Errorf("source deck not found for card: %s", cardObj.FilePath)
+	}
+
+	// Don't do anything if the card is already in the target deck
+	if currentDeck == targetDeck {
+		return nil
+	}
+
+	// Calculate the new file path
+	fileName := filepath.Base(cardObj.FilePath)
+	newFilePath := filepath.Join(targetDeck.Path, fileName)
+
+	// Check if a card with the same filename already exists in the target deck
+	if _, err := os.Stat(newFilePath); err == nil {
+		return fmt.Errorf("a card with the same filename already exists in the target deck")
+	}
+
+	// Create the old file path before we modify the card
+	oldFilePath := cardObj.FilePath
+
+	// Move the file
+	if err := os.Rename(oldFilePath, newFilePath); err != nil {
+		return fmt.Errorf("failed to move card file: %w", err)
+	}
+
+	// Update the card's filepath
+	cardObj.FilePath = newFilePath
+
+	// Update our maps
+	delete(s.Cards, oldFilePath)
+	s.Cards[newFilePath] = cardObj
+
+	// Update the deck associations with some debugging
+	fmt.Printf("Before removal: Current deck has %d cards\n", len(currentDeck.Cards))
+	success := currentDeck.RemoveCard(cardObj)
+	fmt.Printf("Removal successful: %v, Current deck now has %d cards\n", success, len(currentDeck.Cards))
+	targetDeck.AddCard(cardObj)
+
+	return nil
+}
+
+// GetDeckByPath returns the deck at the given path
+func (s *CardStore) GetDeckByPath(path string) (*deck.Deck, error) {
+	// If path is empty or ".", return the root deck
+	if path == "" || path == "." {
+		return s.RootDeck, nil
+	}
+
+	// Check if the path is absolute
+	if filepath.IsAbs(path) {
+		deckObj, exists := s.Decks[path]
+		if !exists {
+			return nil, fmt.Errorf("deck not found: %s", path)
+		}
+		return deckObj, nil
+	}
+
+	// Otherwise, treat it as relative to the root deck
+	return s.GetDeckByRelativePath(path)
+}
+
+// GetDeckByRelativePath returns the deck at the given path relative to the root
+func (s *CardStore) GetDeckByRelativePath(relativePath string) (*deck.Deck, error) {
+	// If the path is empty or ".", return the root deck
+	if relativePath == "" || relativePath == "." {
+		return s.RootDeck, nil
+	}
+
+	// Convert the relative path to an absolute path
+	absPath := filepath.Join(s.RootDir, relativePath)
+
+	// Look up the deck
+	deckObj, exists := s.Decks[absPath]
+	if !exists {
+		return nil, fmt.Errorf("deck not found: %s", relativePath)
+	}
+
+	return deckObj, nil
 }
 
 // parseMarkdown parses a markdown file into a Card structure
@@ -268,10 +609,15 @@ func formatCardAsMarkdown(cardObj *card.Card) ([]byte, error) {
 
 // CreateCard creates a new card with the given title, question, and answer
 func (s *CardStore) CreateCard(title, question, answer string, tags []string) (*card.Card, error) {
+	return s.CreateCardInDeck(title, question, answer, tags, s.RootDeck)
+}
+
+// CreateCardInDeck creates a new card in the specified deck
+func (s *CardStore) CreateCardInDeck(title, question, answer string, tags []string, deckObj *deck.Deck) (*card.Card, error) {
 	cardObj := &card.Card{
 		Title:          title,
 		Tags:           tags,
-		Created:        time.Time{},
+		Created:        time.Now(), // Set created time to now immediately
 		LastReviewed:   time.Time{},
 		ReviewInterval: 0,
 		Difficulty:     0,
@@ -279,11 +625,39 @@ func (s *CardStore) CreateCard(title, question, answer string, tags []string) (*
 		Answer:         answer,
 	}
 
-	// Set created time to now
-	cardObj.Created = time.Now()
+	// Create a filename from the title or use a timestamp if no title
+	filename := "card_" + time.Now().Format("20060102_150405") + ".md"
+	if cardObj.Title != "" {
+		// Convert title to a filename-friendly format
+		filename = strings.ToLower(cardObj.Title)
+		filename = strings.ReplaceAll(filename, " ", "-")
+		filename = strings.ReplaceAll(filename, "/", "-")
+		filename += ".md"
+	}
 
-	// Save the card to disk
-	if err := s.SaveCard(cardObj); err != nil {
+	// Create the filepath within the deck directory
+	cardObj.FilePath = filepath.Join(deckObj.Path, filename)
+
+	// Add to Cards map first
+	s.Cards[cardObj.FilePath] = cardObj
+
+	// Add to deck directly instead of calling SaveCard
+	deckObj.AddCard(cardObj)
+
+	// Save to disk after adding to data structures
+	content, err := formatCardAsMarkdown(cardObj)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the directory if needed
+	dir := filepath.Dir(cardObj.FilePath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, err
+	}
+
+	// Write to file
+	if err := os.WriteFile(cardObj.FilePath, content, 0644); err != nil {
 		return nil, err
 	}
 
@@ -316,6 +690,25 @@ func (s *CardStore) GetDueCards() []*card.Card {
 	for _, cardObj := range s.Cards {
 		if algorithm.SM2.IsDue(cardObj) {
 			dueCards = append(dueCards, cardObj)
+		}
+	}
+
+	return dueCards
+}
+
+// GetDueCardsInDeck returns due cards in a specific deck and its subdecks
+func (s *CardStore) GetDueCardsInDeck(deckObj *deck.Deck) []*card.Card {
+	var dueCards []*card.Card
+	seen := make(map[string]bool) // Track filepaths we've already seen
+
+	// Get all cards in this deck and its subdecks
+	allCards := deckObj.GetAllCards()
+
+	// Filter for due cards
+	for _, cardObj := range allCards {
+		if !seen[cardObj.FilePath] && algorithm.SM2.IsDue(cardObj) {
+			dueCards = append(dueCards, cardObj)
+			seen[cardObj.FilePath] = true
 		}
 	}
 
@@ -373,4 +766,100 @@ func (s *CardStore) GetReviewStats() map[string]interface{} {
 	stats["mature_cards"] = mature
 
 	return stats
+}
+
+// GetDeckStats returns statistics about a specific deck
+func (s *CardStore) GetDeckStats(deckObj *deck.Deck) map[string]interface{} {
+	stats := make(map[string]interface{})
+
+	allCards := deckObj.GetAllCards()
+	totalCards := len(allCards)
+
+	// Get due cards
+	var dueCards []*card.Card
+	for _, cardObj := range allCards {
+		if algorithm.SM2.IsDue(cardObj) {
+			dueCards = append(dueCards, cardObj)
+		}
+	}
+
+	// Count cards by interval ranges
+	newCards := 0
+	young := 0  // 1-7 days
+	mature := 0 // > 7 days
+
+	for _, cardObj := range allCards {
+		if cardObj.ReviewInterval == 0 {
+			newCards++
+		} else if cardObj.ReviewInterval <= 7 {
+			young++
+		} else {
+			mature++
+		}
+	}
+
+	stats["total_cards"] = totalCards
+	stats["due_cards"] = len(dueCards)
+	stats["new_cards"] = newCards
+	stats["young_cards"] = young
+	stats["mature_cards"] = mature
+	stats["sub_decks"] = len(deckObj.SubDecks)
+	stats["direct_cards"] = len(deckObj.Cards)
+
+	return stats
+}
+
+// GetAllTags returns a list of all unique tags used in cards
+func (s *CardStore) GetAllTags() []string {
+	tagMap := make(map[string]bool)
+
+	for _, cardObj := range s.Cards {
+		for _, tag := range cardObj.Tags {
+			tagMap[tag] = true
+		}
+	}
+
+	tags := make([]string, 0, len(tagMap))
+	for tag := range tagMap {
+		tags = append(tags, tag)
+	}
+
+	return tags
+}
+
+// GetCardsByTag returns all cards with a specific tag
+func (s *CardStore) GetCardsByTag(tag string) []*card.Card {
+	var result []*card.Card
+
+	for _, cardObj := range s.Cards {
+		for _, cardTag := range cardObj.Tags {
+			if cardTag == tag {
+				result = append(result, cardObj)
+				break
+			}
+		}
+	}
+
+	return result
+}
+
+// SearchCards searches for cards matching the given text in title, question, or answer
+func (s *CardStore) SearchCards(searchText string) []*card.Card {
+	var result []*card.Card
+
+	// Convert search text to lowercase for case-insensitive matching
+	searchLower := strings.ToLower(searchText)
+
+	for _, cardObj := range s.Cards {
+		// Check title, question, and answer for the search text
+		titleMatch := strings.Contains(strings.ToLower(cardObj.Title), searchLower)
+		questionMatch := strings.Contains(strings.ToLower(cardObj.Question), searchLower)
+		answerMatch := strings.Contains(strings.ToLower(cardObj.Answer), searchLower)
+
+		if titleMatch || questionMatch || answerMatch {
+			result = append(result, cardObj)
+		}
+	}
+
+	return result
 }
