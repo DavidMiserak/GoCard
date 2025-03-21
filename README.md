@@ -11,6 +11,8 @@ built in Go. It uses plain Markdown files organized in directories as
 its data source, making it perfect for developers who prefer working
 with text files and version control.
 
+> **Project Status**: Early development (v0.0.0) - Core functionality implemented but many features are in progress
+
 ## Features
 
 - **File-Based Storage**: All flashcards are stored as Markdown files in regular directories
@@ -55,6 +57,7 @@ github.com/DavidMiserak/GoCard/
 ├── internal/            # Private implementation packages
 │   ├── algorithm/       # Spaced repetition algorithms (SM-2)
 │   ├── card/            # Core card data models
+│   ├── deck/            # Deck management and organization
 │   ├── storage/         # File-based card storage
 │   └── ui/              # Terminal user interface
 ├── assets/              # Application resources
@@ -62,6 +65,7 @@ github.com/DavidMiserak/GoCard/
 ```
 
 This package organization provides:
+
 - Clean separation of concerns
 - Better testability of individual components
 - Easier maintenance and extensibility
@@ -208,15 +212,21 @@ GoCard provides a clean, minimalist terminal interface optimized for focused lea
 |---------|---------------------|
 | `Space` | Show answer         |
 | `0-5`   | Rate card difficulty|
+| `c`     | Change deck         |
+| `C`     | Create new deck     |
+| `n`     | Create new card     |
+| `s`     | Search cards        |
 | `?`     | Toggle help         |
 | `q`     | Quit                |
 
 Additional shortcuts planned for future versions:
+
 - `e` - Edit current card
-- `n` - Create new card
 - `d` - Delete current card
 - `t` - Add/edit tags
-- `s` - Search cards
+- `r` - Rename deck
+- `D` - Delete deck
+- `m` - Move cards between decks
 
 ## Review Process
 
@@ -251,10 +261,26 @@ spaced_repetition:
 
 ## Development
 
+### Setting Up Your Development Environment
+
+```bash
+# Clone the repository
+git clone https://github.com/DavidMiserak/GoCard.git
+cd GoCard
+
+# Install dependencies
+go mod download
+
+# Set up pre-commit hooks
+make pre-commit-setup
+```
+
 ### Running Tests
 
 ```bash
 go test ./...
+# or
+make test
 ```
 
 ### Linting and Formatting
@@ -262,24 +288,59 @@ go test ./...
 ```bash
 # Format code
 go fmt ./...
+# or
+make format
 
 # Run linters
 golangci-lint run
 ```
 
-### Setting Up Pre-commit Hooks
+### Building
 
 ```bash
-pre-commit install
+# Build for your current platform
+go build -o GoCard ./cmd/gocard
+# or
+make GoCard
+
+# Clean build artifacts
+make clean
 ```
+
+### CI/CD
+
+GoCard uses GitHub Actions for continuous integration:
+
+- Automated testing on multiple platforms
+- Code linting with golangci-lint
+- Automated builds for Linux, macOS, and Windows
+- Release automation when tagging versions
+
+## Issue Tracking
+
+Development tasks and feature plans are tracked in the project's [issues.org](issues.org) file.
+
+Current focus areas:
+
+- Real-time file watching
+- Advanced markdown rendering with code syntax highlighting
+- Search and filter functionality
+- Import/export compatibility with other SRS systems
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+Before submitting PR:
+
+1. Ensure tests pass: `make test`
+2. Format your code: `make format`
+3. Run pre-commit hooks: `pre-commit run --all-files`
+4. Follow [conventional commits](https://www.conventionalcommits.org/) for commit messages
+
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgements
 
