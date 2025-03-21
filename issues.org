@@ -7,14 +7,14 @@
 #+COLUMNS: %25ITEM %TODO %PRIORITY %TAGS %EFFORT
 
 * Core Functionality [0/4]
-** TODO [#A] Issue 1: File-Based Storage Implementation 
+** TODO [#A] Issue 1: File-Based Storage Implementation
 :PROPERTIES:
 :EFFORT:   16:00
 :END:
 
 *** User Story
-As a user who values text-based workflows,  
-I need a system that stores flashcards as Markdown files in regular directories  
+As a user who values text-based workflows,
+I need a system that stores flashcards as Markdown files in regular directories
 So that I can easily edit, track, and back up my knowledge base with standard tools.
 
 *** Details and Assumptions
@@ -54,8 +54,8 @@ None
 :END:
 
 *** User Story
-As a learner,  
-I need an efficient spaced repetition system  
+As a learner,
+I need an efficient spaced repetition system
 So that I can optimize my memory retention and learning efficiency.
 
 *** Details and Assumptions
@@ -94,8 +94,8 @@ Then the interval between reviews should increase appropriately
 :END:
 
 *** User Story
-As a user who edits flashcards with external text editors,  
-I need GoCard to automatically detect and reload cards when they change on disk  
+As a user who edits flashcards with external text editors,
+I need GoCard to automatically detect and reload cards when they change on disk
 So that I can seamlessly work with my preferred editor and see changes immediately in the application.
 
 *** Details and Assumptions
@@ -153,8 +153,8 @@ Then the application should correctly detect and handle these changes
 :END:
 
 *** User Story
-As a GoCard user,  
-I need to organize my flashcards into logical groupings (decks) using directories  
+As a GoCard user,
+I need to organize my flashcards into logical groupings (decks) using directories
 So that I can manage my learning materials by topic, difficulty, or other classification schemes.
 
 *** Details and Assumptions
@@ -219,7 +219,7 @@ Proposed:
 CardStore
 ├── map[filepath]*Card  // All cards
 └── map[deckPath]*Deck  // Organized by deck
-    
+
 Deck
 ├── Name           // Deck name (directory name)
 ├── Path           // Directory path
@@ -239,8 +239,8 @@ Deck
 :END:
 
 *** User Story
-As a developer of GoCard,  
-I need to upgrade the markdown parsing to use the Goldmark library  
+As a developer of GoCard,
+I need to upgrade the markdown parsing to use the Goldmark library
 So that we can properly render rich markdown content with consistent parsing and better extensibility.
 
 *** Details and Assumptions
@@ -289,8 +289,8 @@ Then the parser should handle these cases correctly without data loss
 :END:
 
 *** User Story
-As a user,  
-I need a simple interface to navigate and review my flashcards  
+As a user,
+I need a simple interface to navigate and review my flashcards
 So that I can focus on learning without distractions.
 
 *** Details and Assumptions
@@ -331,8 +331,8 @@ Then I should see a summary of my progress
 :END:
 
 *** User Story
-As a user with many flashcards,  
-I need to be able to search and filter my card collection  
+As a user with many flashcards,
+I need to be able to search and filter my card collection
 So that I can quickly find specific cards or focus on particular topics.
 
 *** Details and Assumptions
@@ -357,7 +357,7 @@ Then only cards from that directory should be displayed
 #+END_SRC
 
 *** Implementation Notes
-- Implement text search functionality 
+- Implement text search functionality
 - Add tag-based filtering
 - Implement metadata-based filtering (due date, creation date, difficulty)
 - Create UI components for search and filter controls
@@ -374,8 +374,8 @@ Then only cards from that directory should be displayed
 :END:
 
 *** User Story
-As a user with existing flashcard collections,  
-I need to import and export cards in common formats  
+As a user with existing flashcard collections,
+I need to import and export cards in common formats
 So that I can migrate my knowledge base between different systems.
 
 *** Details and Assumptions
