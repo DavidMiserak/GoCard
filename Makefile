@@ -12,6 +12,10 @@ pre-commit-setup:
 GoCard: main.go
 	CGO_ENABLED=0 go build -o GoCard
 
+.PHONY: format
+format:
+	go fmt ./...
+
 .PHONY: test
 test:
 	go test -v ./...
