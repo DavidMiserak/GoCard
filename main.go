@@ -47,33 +47,104 @@ Example (Two Sum in sorted array):
 
 	fmt.Printf("Created new card: %s at %s\n", exampleCard.Title, exampleCard.FilePath)
 
-	// Example: Load all cards and print them
-	fmt.Println("\nAll cards in the store:")
-	for path, card := range store.Cards {
-		fmt.Printf("- %s (%s)\n", card.Title, path)
-	}
-
 	// Example: Get due cards
 	dueCards := store.GetDueCards()
 	fmt.Printf("\nFound %d cards due for review\n", len(dueCards))
 
-	// Example: Update a card after review
+	// Example: Review a card with SM-2 algorithm
 	if len(dueCards) > 0 {
 		card := dueCards[0]
-		card.LastReviewed = time.Now()
-		card.Difficulty = 3     // Medium difficulty
-		card.ReviewInterval = 2 // Review again in 2 days
 
-		if err := store.SaveCard(card); err != nil {
-			log.Fatalf("Failed to save card: %v", err)
+		// Simulate reviewing the card
+		fmt.Printf("\nReviewing card: %s\n", card.Title)
+		fmt.Printf("Question: %s\n", card.Question)
+		fmt.Println("...(User would see answer and rate their recall)...")
+
+		// Rating: 0-5 where:
+		// 0-2: Difficult/incorrect (reset interval)
+		// 3: Correct but difficult (small interval increase)
+		// 4: Correct and somewhat easy (larger interval increase)
+		// 5: Very easy (largest interval increase)
+		rating := 4 // Example rating (good recall)
+
+		// Apply the SM-2 algorithm and save the card
+		prevInterval := card.ReviewInterval
+		err := store.ReviewCard(card, rating)
+		if err != nil {
+			log.Fatalf("Failed to review card: %v", err)
 		}
 
-		fmt.Printf("Updated card: %s\n", card.Title)
+		fmt.Printf("Card reviewed with rating: %d\n", rating)
+		fmt.Printf("Review interval changed from %d to %d days\n", prevInterval, card.ReviewInterval)
+		fmt.Printf("Next review date: %s\n", SM2.CalculateDueDate(card).Format("Jan 2, 2006"))
 	}
 
-	// Implementation note: In a real application, you would:
-	// 1. Connect this to a GUI for user interaction
-	// 2. Add proper file watching for external changes
-	// 3. Implement a review scheduler based on the SM-2 algorithm
-	// 4. Add handling for card organization into decks (directories)
+	// Example: Create several cards with different review histories
+	createDemoCards(store)
+
+	// Display statistics
+	stats := store.GetReviewStats()
+	fmt.Println("\nCard Statistics:")
+	fmt.Printf("Total cards: %d\n", stats["total_cards"])
+	fmt.Printf("Due cards: %d\n", stats["due_cards"])
+	fmt.Printf("New cards: %d\n", stats["new_cards"])
+	fmt.Printf("Young cards (1-7 days): %d\n", stats["young_cards"])
+	fmt.Printf("Mature cards (>7 days): %d\n", stats["mature_cards"])
+
+	fmt.Println("\nNext due card: ", store.GetNextDueDate().Format("Jan 2, 2006"))
+}
+
+// createDemoCards creates a few cards with different review histories
+// to demonstrate the SM-2 algorithm behavior
+func createDemoCards(store *CardStore) {
+	// Create a new card (never reviewed)
+	newCard, _ := store.CreateCard(
+		"Binary Search",
+		"Explain the binary search algorithm and its time complexity.",
+		"Binary search is an O(log n) algorithm that works on sorted arrays by repeatedly dividing the search interval in half.",
+		[]string{"algorithms", "searching"},
+	)
+	fmt.Printf("\nCreated new card: %s (never reviewed)\n", newCard.Title)
+
+	// Create a young card (reviewed recently, short interval)
+	youngCard, _ := store.CreateCard(
+		"Quick Sort",
+		"How does Quick Sort work?",
+		"Quick sort is a divide-and-conquer algorithm that picks a pivot element and partitions the array around it.",
+		[]string{"algorithms", "sorting"},
+	)
+	// Simulate a previous review 2 days ago with a good rating
+	youngCard.LastReviewed = time.Now().AddDate(0, 0, -2)
+	youngCard.ReviewInterval = 4
+	youngCard.Difficulty = 4
+	store.SaveCard(youngCard)
+	fmt.Printf("Created young card: %s (reviewed 2 days ago, due in 2 days)\n", youngCard.Title)
+
+	// Create a mature card (reviewed long ago, long interval)
+	matureCard, _ := store.CreateCard(
+		"Graph Traversal",
+		"Compare BFS and DFS graph traversal algorithms.",
+		"BFS uses a queue and explores all neighbors before moving to the next level. DFS uses a stack (or recursion) and explores as far as possible along one branch before backtracking.",
+		[]string{"algorithms", "graphs"},
+	)
+	// Simulate several successful reviews, resulting in a long interval
+	matureCard.LastReviewed = time.Now().AddDate(0, 0, -10)
+	matureCard.ReviewInterval = 30
+	matureCard.Difficulty = 5
+	store.SaveCard(matureCard)
+	fmt.Printf("Created mature card: %s (reviewed 10 days ago, due in 20 days)\n", matureCard.Title)
+
+	// Create an overdue card
+	overdueCard, _ := store.CreateCard(
+		"Dynamic Programming",
+		"What is dynamic programming and when is it useful?",
+		"Dynamic programming is an optimization technique that solves problems by breaking them down into simpler subproblems and storing the results to avoid redundant calculations.",
+		[]string{"algorithms", "optimization"},
+	)
+	// Simulate a review that's now overdue
+	overdueCard.LastReviewed = time.Now().AddDate(0, 0, -15)
+	overdueCard.ReviewInterval = 7
+	overdueCard.Difficulty = 3
+	store.SaveCard(overdueCard)
+	fmt.Printf("Created overdue card: %s (was due 8 days ago)\n", overdueCard.Title)
 }
