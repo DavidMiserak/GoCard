@@ -144,22 +144,6 @@ func (s *CardStore) DeleteCard(card *Card) error {
 	return nil
 }
 
-// GetDueCards returns all cards that are due for review
-func (s *CardStore) GetDueCards() []*Card {
-	var dueCards []*Card
-	now := time.Now()
-
-	for _, card := range s.Cards {
-		// A card is due if it has never been reviewed or if the review interval has passed
-		if card.LastReviewed.IsZero() ||
-			now.After(card.LastReviewed.AddDate(0, 0, card.ReviewInterval)) {
-			dueCards = append(dueCards, card)
-		}
-	}
-
-	return dueCards
-}
-
 // parseMarkdown parses a markdown file into a Card structure
 func parseMarkdown(content []byte) (*Card, error) {
 	// Check if the file starts with YAML frontmatter
@@ -291,4 +275,84 @@ func (s *CardStore) WatchForChanges() {
 	// In a real implementation, you'd use something like fsnotify
 	// to watch for file changes and reload cards as needed
 	fmt.Println("File watching not implemented yet")
+}
+
+// SM2 is the spaced repetition algorithm used for scheduling reviews
+var SM2 = NewSM2Algorithm()
+
+// ReviewCard reviews a card with the given difficulty rating (0-5)
+// and saves the updated card to disk
+func (s *CardStore) ReviewCard(card *Card, rating int) error {
+	// Apply the SM-2 algorithm to calculate the next review date
+	SM2.CalculateNextReview(card, rating)
+
+	// Save the updated card to disk
+	return s.SaveCard(card)
+}
+
+// GetDueCards returns all cards that are due for review
+// Update this method to use the SM2 algorithm for determining due cards
+func (s *CardStore) GetDueCards() []*Card {
+	var dueCards []*Card
+
+	for _, card := range s.Cards {
+		if SM2.IsDue(card) {
+			dueCards = append(dueCards, card)
+		}
+	}
+
+	return dueCards
+}
+
+// GetNextDueDate returns the date when the next card will be due
+func (s *CardStore) GetNextDueDate() time.Time {
+	var nextDue time.Time
+
+	// Set nextDue to far future initially
+	nextDue = time.Now().AddDate(10, 0, 0)
+
+	for _, card := range s.Cards {
+		// Skip cards that are already due
+		if SM2.IsDue(card) {
+			return time.Now()
+		}
+
+		cardDueDate := SM2.CalculateDueDate(card)
+		if cardDueDate.Before(nextDue) {
+			nextDue = cardDueDate
+		}
+	}
+
+	return nextDue
+}
+
+// GetReviewStats returns statistics about the review process
+func (s *CardStore) GetReviewStats() map[string]interface{} {
+	stats := make(map[string]interface{})
+
+	totalCards := len(s.Cards)
+	dueCards := len(s.GetDueCards())
+
+	// Count cards by interval ranges
+	newCards := 0
+	young := 0  // 1-7 days
+	mature := 0 // > 7 days
+
+	for _, card := range s.Cards {
+		if card.ReviewInterval == 0 {
+			newCards++
+		} else if card.ReviewInterval <= 7 {
+			young++
+		} else {
+			mature++
+		}
+	}
+
+	stats["total_cards"] = totalCards
+	stats["due_cards"] = dueCards
+	stats["new_cards"] = newCards
+	stats["young_cards"] = young
+	stats["mature_cards"] = mature
+
+	return stats
 }
