@@ -6,7 +6,7 @@
 #+PROPERTY: effort_estimate 1:00 2:00 4:00 8:00 16:00 24:00 40:00
 #+COLUMNS: %25ITEM %TODO %PRIORITY %TAGS %EFFORT
 
-* Core Functionality [2/4]
+* Core Functionality [3/4]
 ** DONE [#A] Issue 1: File-Based Storage Implementation
 :PROPERTIES:
 :EFFORT:   16:00
@@ -147,7 +147,7 @@ Then the application should correctly detect and handle these changes
 *** Related Issues
 - Issue 1: File-Based Storage Implementation
 
-** TODO [#A] Issue 15: Implement Deck Organization through Directory Structure
+** DONE [#A] Issue 15: Implement Deck Organization through Directory Structure
 :PROPERTIES:
 :EFFORT:   16:00
 :END:
