@@ -117,7 +117,9 @@ func createDemoCards(store *CardStore) {
 	youngCard.LastReviewed = time.Now().AddDate(0, 0, -2)
 	youngCard.ReviewInterval = 4
 	youngCard.Difficulty = 4
-	store.SaveCard(youngCard)
+	if err := store.SaveCard(youngCard); err != nil {
+		log.Fatalf("Failed to save young card: %v", err)
+	}
 	fmt.Printf("Created young card: %s (reviewed 2 days ago, due in 2 days)\n", youngCard.Title)
 
 	// Create a mature card (reviewed long ago, long interval)
@@ -131,7 +133,9 @@ func createDemoCards(store *CardStore) {
 	matureCard.LastReviewed = time.Now().AddDate(0, 0, -10)
 	matureCard.ReviewInterval = 30
 	matureCard.Difficulty = 5
-	store.SaveCard(matureCard)
+	if err := store.SaveCard(matureCard); err != nil {
+		log.Fatalf("Failed to save mature card: %v", err)
+	}
 	fmt.Printf("Created mature card: %s (reviewed 10 days ago, due in 20 days)\n", matureCard.Title)
 
 	// Create an overdue card
@@ -145,6 +149,8 @@ func createDemoCards(store *CardStore) {
 	overdueCard.LastReviewed = time.Now().AddDate(0, 0, -15)
 	overdueCard.ReviewInterval = 7
 	overdueCard.Difficulty = 3
-	store.SaveCard(overdueCard)
+	if err := store.SaveCard(overdueCard); err != nil {
+		log.Fatalf("Failed to save overdue card: %v", err)
+	}
 	fmt.Printf("Created overdue card: %s (was due 8 days ago)\n", overdueCard.Title)
 }
