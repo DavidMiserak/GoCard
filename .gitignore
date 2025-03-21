@@ -1,38 +1,32 @@
-# LaTeX build files
-*.aux
-*.bbl
-*.bcf
-*.blg
-*.fdb_latexmk
-*.fls
-*.log
+# Go specific
+/GoCard
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
 *.out
-*.run.xml
-*.synctex
-*.synctex.gz
-*.toc
-*.lof
-*.lot
-*.dvi
-*.xdv
+go.work
 
-# PDF output (optional - comment out if you want to track the PDF)
-*.pdf
+# Build/debug directories
+/bin/
+/dist/
+/debug/
+/vendor/
+/tmp/
 
-# Build directory contents except .gitkeep
-build/*
-!build/.gitkeep
-
-# Editor files
-*~
+# IDE and editor files (expanded)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
 *.swp
 *.swo
-.vscode/
-.idea/
+*~
 
 # OS specific files
 .DS_Store
 Thumbs.db
-
-# Tectonic specific
-.tectonic/
