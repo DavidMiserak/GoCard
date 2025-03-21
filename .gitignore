@@ -1,0 +1,38 @@
+# LaTeX build files
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.dvi
+*.xdv
+
+# PDF output (optional - comment out if you want to track the PDF)
+*.pdf
+
+# Build directory contents except .gitkeep
+build/*
+!build/.gitkeep
+
+# Editor files
+*~
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Tectonic specific
+.tectonic/

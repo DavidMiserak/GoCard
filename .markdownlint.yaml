@@ -1,0 +1,4 @@
+default: true
+MD013: false  # Line length
+MD033: false  # Allow inline HTML for README.md
+MD041: false  # First line in file should be a top level heading
