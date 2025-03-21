@@ -138,7 +138,7 @@ Your answer goes here. This can include:
 
 Organize your cards however you want! The directory structure becomes the deck structure:
 
-```
+```sh
 ~/gocard/
 ├── algorithms/
 │   ├── sorting/
