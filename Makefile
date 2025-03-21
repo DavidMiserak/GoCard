@@ -9,8 +9,8 @@ pre-commit-setup:
 	pre-commit install --install-hooks
 	pre-commit run --all-files
 
-GoCard: main.go
-	CGO_ENABLED=0 go build -o GoCard
+GoCard:
+	CGO_ENABLED=0 go build -o GoCard ./cmd/gocard
 
 .PHONY: format
 format:
