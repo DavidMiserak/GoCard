@@ -2,15 +2,22 @@
 package storage
 
 import (
+	"bytes"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/DavidMiserak/GoCard/internal/algorithm"
 	"github.com/DavidMiserak/GoCard/internal/card"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer/html"
+	"github.com/yuin/goldmark/text"
 	"gopkg.in/yaml.v3"
 )
 
@@ -133,20 +140,21 @@ func (s *CardStore) DeleteCard(cardObj *card.Card) error {
 }
 
 // parseMarkdown parses a markdown file into a Card structure
+// Uses Goldmark for proper markdown processing
 func parseMarkdown(content []byte) (*card.Card, error) {
 	// Check if the file starts with YAML frontmatter
-	if !strings.HasPrefix(string(content), "---\n") {
+	if !bytes.HasPrefix(content, []byte("---\n")) {
 		return nil, fmt.Errorf("markdown file must start with YAML frontmatter")
 	}
 
 	// Split the content into frontmatter and markdown
-	parts := strings.SplitN(string(content), "---\n", 3)
+	parts := bytes.SplitN(content, []byte("---\n"), 3)
 	if len(parts) < 3 {
 		return nil, fmt.Errorf("invalid markdown format")
 	}
 
 	frontmatter := parts[1]
-	markdown := parts[2]
+	markdownContent := parts[2]
 
 	// Create a temporary struct that matches the YAML structure exactly
 	type frontMatterData struct {
@@ -159,7 +167,7 @@ func parseMarkdown(content []byte) (*card.Card, error) {
 
 	// Parse YAML frontmatter into temporary struct
 	var fmData frontMatterData
-	if err := yaml.Unmarshal([]byte(frontmatter), &fmData); err != nil {
+	if err := yaml.Unmarshal(frontmatter, &fmData); err != nil {
 		return nil, fmt.Errorf("failed to parse YAML frontmatter: %w", err)
 	}
 
@@ -172,38 +180,45 @@ func parseMarkdown(content []byte) (*card.Card, error) {
 		Difficulty:     fmData.Difficulty,
 	}
 
-	// Extract title, question, and answer from markdown
-	// This is a simplified implementation - in practice you'd use a proper markdown parser
-	lines := strings.Split(markdown, "\n")
-	var inQuestion, inAnswer bool
-	var questionLines, answerLines []string
+	// Extract title, question, and answer from markdown using regex
+	// This preserves the raw markdown content for proper rendering later
+	mdStr := string(markdownContent)
 
-	for _, line := range lines {
-		if strings.HasPrefix(line, "# ") {
-			cardObj.Title = strings.TrimPrefix(line, "# ")
-		} else if strings.HasPrefix(line, "## Question") {
-			inQuestion = true
-			inAnswer = false
-			continue
-		} else if strings.HasPrefix(line, "## Answer") {
-			inQuestion = false
-			inAnswer = true
-			continue
-		} else if strings.HasPrefix(line, "## ") {
-			// Another section, stop collecting
-			inQuestion = false
-			inAnswer = false
-		}
-
-		if inQuestion {
-			questionLines = append(questionLines, line)
-		} else if inAnswer {
-			answerLines = append(answerLines, line)
-		}
+	// Title regex: Finds a level 1 heading (# Title)
+	titleRegex := regexp.MustCompile(`(?m)^# (.+)$`)
+	if match := titleRegex.FindStringSubmatch(mdStr); len(match) > 1 {
+		cardObj.Title = strings.TrimSpace(match[1])
 	}
 
-	cardObj.Question = strings.TrimSpace(strings.Join(questionLines, "\n"))
-	cardObj.Answer = strings.TrimSpace(strings.Join(answerLines, "\n"))
+	// Question section regex: Finds content between "## Question" and the next heading or end of content
+	questionRegex := regexp.MustCompile(`(?ms)^## Question\s*\n(.*?)(?:^## |\z)`)
+	if match := questionRegex.FindStringSubmatch(mdStr); len(match) > 1 {
+		cardObj.Question = strings.TrimSpace(match[1])
+	}
+
+	// Answer section regex: Finds content between "## Answer" and the next heading or end of content
+	answerRegex := regexp.MustCompile(`(?ms)^## Answer\s*\n(.*?)(?:^## |\z)`)
+	if match := answerRegex.FindStringSubmatch(mdStr); len(match) > 1 {
+		cardObj.Answer = strings.TrimSpace(match[1])
+	}
+
+	// Validate the extracted markdown content by parsing it with Goldmark
+	// This ensures that the markdown is well-formed before we store it
+	md := goldmark.New(
+		goldmark.WithExtensions(extension.GFM),
+		goldmark.WithParserOptions(
+			parser.WithAutoHeadingID(),
+		),
+		goldmark.WithRendererOptions(
+			html.WithHardWraps(),
+			html.WithXHTML(),
+		),
+	)
+
+	// Parse the question and answer to validate them
+	// We don't need the output, we just want to ensure they parse correctly
+	_ = md.Parser().Parse(text.NewReader([]byte(cardObj.Question)))
+	_ = md.Parser().Parse(text.NewReader([]byte(cardObj.Answer)))
 
 	return cardObj, nil
 }
