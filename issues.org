@@ -232,8 +232,8 @@ Deck
 - Issue 1: File-Based Storage Implementation
 - Issue 3: Basic Card Navigation and Review Interface
 - Issue 6: Search and Filter Functionality
-* Enhanced Features [0/3]
-** TODO [#B] Issue 13: Convert to Goldmark for Markdown Processing
+* Enhanced Features [2/4]
+** DONE [#B] Issue 13: Convert to Goldmark for Markdown Processing
 :PROPERTIES:
 :EFFORT:   8:00
 :END:
@@ -283,7 +283,7 @@ Then the parser should handle these cases correctly without data loss
 - Issue 1: File-Based Storage Implementation
 - Issue 4: Markdown Rendering with Code Syntax Highlighting
 
-** TODO [#B] Issue 3: Basic Card Navigation and Review Interface
+** DONE [#B] Issue 3: Basic Card Navigation and Review Interface
 :PROPERTIES:
 :EFFORT:   24:00
 :END:
