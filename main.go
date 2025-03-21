@@ -3,14 +3,20 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"time"
+	"time" // Needed for createDemoCards
 )
 
 func main() {
+	// Define command-line flags
+	var useTUI bool
+	flag.BoolVar(&useTUI, "tui", false, "Use terminal UI mode")
+	flag.Parse()
+
 	// Create or use the default directory for flashcards
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -19,12 +25,32 @@ func main() {
 
 	cardsDir := filepath.Join(homeDir, "GoCard")
 
+	// Allow specifying a different cards directory as a positional argument
+	if flag.NArg() > 0 {
+		cardsDir = flag.Arg(0)
+	}
+
 	// Initialize our card store
 	store, err := NewCardStore(cardsDir)
 	if err != nil {
 		log.Fatalf("Failed to initialize card store: %v", err)
 	}
 
+	// If TUI mode is enabled, launch the terminal UI
+	if useTUI {
+		fmt.Printf("Starting GoCard terminal UI with cards from: %s\n", cardsDir)
+		if err := RunTUI(store); err != nil {
+			log.Fatalf("Error running terminal UI: %v", err)
+		}
+		return
+	}
+
+	// Otherwise, run the original example code
+	runExampleMode(store)
+}
+
+// runExampleMode runs the original example code from the previous main function
+func runExampleMode(store *CardStore) {
 	// Example: Create a new flashcard
 	exampleCard, err := store.CreateCard(
 		"Two-Pointer Technique",
