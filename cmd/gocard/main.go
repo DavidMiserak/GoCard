@@ -1,4 +1,4 @@
-// Filename: main.go
+// Filename: cmd/gocard/main.go
 // Version: 0.0.0
 package main
 
@@ -8,7 +8,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"time" // Needed for createDemoCards
+	"time"
+
+	"github.com/DavidMiserak/GoCard/internal/algorithm"
+	"github.com/DavidMiserak/GoCard/internal/storage"
+	"github.com/DavidMiserak/GoCard/internal/ui"
 )
 
 func main() {
@@ -31,7 +35,7 @@ func main() {
 	}
 
 	// Initialize our card store
-	store, err := NewCardStore(cardsDir)
+	store, err := storage.NewCardStore(cardsDir)
 	if err != nil {
 		log.Fatalf("Failed to initialize card store: %v", err)
 	}
@@ -39,7 +43,7 @@ func main() {
 	// If TUI mode is enabled, launch the terminal UI
 	if useTUI {
 		fmt.Printf("Starting GoCard terminal UI with cards from: %s\n", cardsDir)
-		if err := RunTUI(store); err != nil {
+		if err := ui.RunTUI(store); err != nil {
 			log.Fatalf("Error running terminal UI: %v", err)
 		}
 		return
@@ -50,7 +54,7 @@ func main() {
 }
 
 // runExampleMode runs the original example code from the previous main function
-func runExampleMode(store *CardStore) {
+func runExampleMode(store *storage.CardStore) {
 	// Example: Create a new flashcard
 	exampleCard, err := store.CreateCard(
 		"Two-Pointer Technique",
@@ -102,7 +106,7 @@ Example (Two Sum in sorted array):
 
 		fmt.Printf("Card reviewed with rating: %d\n", rating)
 		fmt.Printf("Review interval changed from %d to %d days\n", prevInterval, card.ReviewInterval)
-		fmt.Printf("Next review date: %s\n", SM2.CalculateDueDate(card).Format("Jan 2, 2006"))
+		fmt.Printf("Next review date: %s\n", algorithm.SM2.CalculateDueDate(card).Format("Jan 2, 2006"))
 	}
 
 	// Example: Create several cards with different review histories
@@ -122,7 +126,7 @@ Example (Two Sum in sorted array):
 
 // createDemoCards creates a few cards with different review histories
 // to demonstrate the SM-2 algorithm behavior
-func createDemoCards(store *CardStore) {
+func createDemoCards(store *storage.CardStore) {
 	// Create a new card (never reviewed)
 	newCard, _ := store.CreateCard(
 		"Binary Search",

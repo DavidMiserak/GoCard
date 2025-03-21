@@ -34,7 +34,7 @@ Download the latest binary for your platform from the
 ### Using Go Install
 
 ```bash
-go install github.com/DavidMiserak/GoCard@latest
+go install github.com/DavidMiserak/GoCard/cmd/gocard@latest
 ```
 
 ### Building from Source
@@ -42,8 +42,30 @@ go install github.com/DavidMiserak/GoCard@latest
 ```bash
 git clone https://github.com/DavidMiserak/GoCard.git
 cd GoCard
-go build
+go build -o GoCard ./cmd/gocard
 ```
+
+## Project Structure
+
+GoCard follows a standard Go project layout:
+
+```sh
+github.com/DavidMiserak/GoCard/
+├── cmd/gocard/          # Main application entry point
+├── internal/            # Private implementation packages
+│   ├── algorithm/       # Spaced repetition algorithms (SM-2)
+│   ├── card/            # Core card data models
+│   ├── storage/         # File-based card storage
+│   └── ui/              # Terminal user interface
+├── assets/              # Application resources
+└── docs/                # Documentation
+```
+
+This package organization provides:
+- Clean separation of concerns
+- Better testability of individual components
+- Easier maintenance and extensibility
+- Adherence to Go best practices
 
 ## Quick Start
 
@@ -225,6 +247,30 @@ spaced_repetition:
   easy_bonus: 1.3
   interval_modifier: 1.0
   new_cards_per_day: 20
+```
+
+## Development
+
+### Running Tests
+
+```bash
+go test ./...
+```
+
+### Linting and Formatting
+
+```bash
+# Format code
+go fmt ./...
+
+# Run linters
+golangci-lint run
+```
+
+### Setting Up Pre-commit Hooks
+
+```bash
+pre-commit install
 ```
 
 ## Contributing

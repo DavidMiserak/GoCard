@@ -25,8 +25,13 @@ repos:
     rev: v0.5.1
     hooks:
     - id: go-fmt
+      files: ".*\\.go$"
     - id: go-vet
+      files: ".*\\.go$"
+      args: ['./...'] # Use ./... to check all subdirectories
     - id: go-unit-tests
+      files: ".*\\.go$"
+      args: ['./...'] # Use ./... to check all subdirectories
 
   # Search for problematic terms in the text
   - repo: https://github.com/codespell-project/codespell

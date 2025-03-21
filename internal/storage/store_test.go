@@ -1,6 +1,5 @@
-// Filename: card_store_test.go
-// Version: 0.0.0
-package main
+// File: internal/storage/store_test.go
+package storage
 
 import (
 	"fmt"
@@ -8,6 +7,9 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/DavidMiserak/GoCard/internal/algorithm"
+	"github.com/DavidMiserak/GoCard/internal/card"
 )
 
 func TestCardStore(t *testing.T) {
@@ -30,18 +32,18 @@ func TestCardStore(t *testing.T) {
 	answer := "This is the test answer."
 	tags := []string{"test", "example"}
 
-	card, err := store.CreateCard(title, question, answer, tags)
+	testCard, err := store.CreateCard(title, question, answer, tags)
 	if err != nil {
 		t.Fatalf("Failed to create card: %v", err)
 	}
 
 	// Check if file was created
-	if _, err := os.Stat(card.FilePath); os.IsNotExist(err) {
+	if _, err := os.Stat(testCard.FilePath); os.IsNotExist(err) {
 		t.Errorf("Card file was not created on disk")
 	}
 
 	// Test loading the card
-	loadedCard, err := store.LoadCard(card.FilePath)
+	loadedCard, err := store.LoadCard(testCard.FilePath)
 	if err != nil {
 		t.Fatalf("Failed to load card: %v", err)
 	}
@@ -62,15 +64,27 @@ func TestCardStore(t *testing.T) {
 	loadedCard.LastReviewed = time.Now()
 	loadedCard.ReviewInterval = 2
 
+	// Debug print
+	fmt.Printf("Before saving: ReviewInterval=%d\n", loadedCard.ReviewInterval)
+
 	if err := store.SaveCard(loadedCard); err != nil {
 		t.Fatalf("Failed to save updated card: %v", err)
 	}
 
+	// Debug: Check what we're writing to the file
+	content, err := os.ReadFile(testCard.FilePath)
+	if err == nil {
+		fmt.Printf("File content after save:\n%s\n", string(content))
+	}
+
 	// Reload the card and check if updates persisted
-	updatedCard, err := store.LoadCard(card.FilePath)
+	updatedCard, err := store.LoadCard(testCard.FilePath)
 	if err != nil {
 		t.Fatalf("Failed to reload card: %v", err)
 	}
+
+	// Debug print
+	fmt.Printf("After loading: ReviewInterval=%d\n", updatedCard.ReviewInterval)
 
 	if updatedCard.Difficulty != 3 {
 		t.Errorf("Expected difficulty 3, got %d", updatedCard.Difficulty)
@@ -85,7 +99,7 @@ func TestCardStore(t *testing.T) {
 	}
 
 	// Check if file was removed
-	if _, err := os.Stat(card.FilePath); !os.IsNotExist(err) {
+	if _, err := os.Stat(testCard.FilePath); !os.IsNotExist(err) {
 		t.Errorf("Card file was not deleted from disk")
 	}
 
@@ -110,7 +124,7 @@ func TestCardStore(t *testing.T) {
 	}
 
 	// Add a card in the subdirectory
-	subCard := &Card{
+	subCard := &card.Card{
 		Title:          "Subdirectory Card",
 		Question:       "Question in subdirectory",
 		Answer:         "Answer in subdirectory",
@@ -157,12 +171,21 @@ func TestCardStore(t *testing.T) {
 	}
 
 	// Update one card to be not due
-	for _, c := range newStore.Cards {
+	var updatedCardPath string
+	for path, c := range newStore.Cards {
+		// Set a review date in the past
 		c.LastReviewed = time.Now()
+		// Use a large interval to ensure it's not due
 		c.ReviewInterval = 30 // due in 30 days
+
+		// Debug print
+		fmt.Printf("Setting card to not due: LastReviewed=%v, ReviewInterval=%d\n",
+			c.LastReviewed, c.ReviewInterval)
+
 		if err := newStore.SaveCard(c); err != nil {
 			t.Fatalf("Failed to update card review date: %v", err)
 		}
+		updatedCardPath = path
 		break // only update one card
 	}
 
@@ -172,8 +195,34 @@ func TestCardStore(t *testing.T) {
 		t.Fatalf("Failed to create newer card store: %v", err)
 	}
 
+	// Debug print all cards from the new store
+	for path, c := range newerStore.Cards {
+		fmt.Printf("Card in new store: %s, LastReviewed=%v, ReviewInterval=%d, IsDue=%v\n",
+			path, c.LastReviewed, c.ReviewInterval,
+			algorithm.SM2.IsDue(c))
+	}
+
+	// Verify the specific card we updated is not due
+	updatedCard = newerStore.Cards[updatedCardPath]
+	if updatedCard == nil {
+		t.Fatalf("Failed to find updated card at path: %s", updatedCardPath)
+	}
+
+	// Debug
+	if algorithm.SM2.IsDue(updatedCard) {
+		t.Errorf("Card should not be due: LastReviewed=%v, ReviewInterval=%d, Current time=%v, Due date=%v",
+			updatedCard.LastReviewed, updatedCard.ReviewInterval, time.Now(),
+			updatedCard.LastReviewed.AddDate(0, 0, updatedCard.ReviewInterval))
+	}
+
 	dueCards = newerStore.GetDueCards()
 	if len(dueCards) != expectedCount-1 {
 		t.Errorf("Expected %d due cards after update, got %d", expectedCount-1, len(dueCards))
+
+		// Additional debug - list which cards are due
+		for _, c := range dueCards {
+			fmt.Printf("Due card: %s, LastReviewed=%v, ReviewInterval=%d\n",
+				c.Title, c.LastReviewed, c.ReviewInterval)
+		}
 	}
 }

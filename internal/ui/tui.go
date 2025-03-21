@@ -1,12 +1,14 @@
-// Filename: tui.go
-// Version: 0.0.0
-package main
+// File: internal/ui/tui.go
+package ui
 
 import (
 	"fmt"
 	"os"
 	"strings"
-	"time" // Used for date formatting in the TUI
+	"time"
+
+	"github.com/DavidMiserak/GoCard/internal/card"
+	"github.com/DavidMiserak/GoCard/internal/storage"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -125,9 +127,9 @@ type model struct {
 	keys        keyMap
 	help        help.Model
 	viewport    viewport.Model
-	store       *CardStore
-	currentCard *Card
-	dueCards    []*Card
+	store       *storage.CardStore
+	currentCard *card.Card
+	dueCards    []*card.Card
 	state       reviewState
 	renderer    *glamour.TermRenderer
 	reviewCount int
@@ -138,7 +140,7 @@ type model struct {
 }
 
 // initModel initializes the TUI model
-func initModel(store *CardStore) model {
+func initModel(store *storage.CardStore) model {
 	keys := defaultKeyMap()
 	helpModel := help.New()
 	helpModel.ShowAll = false
@@ -450,7 +452,7 @@ func (m model) View() string {
 }
 
 // RunTUI starts the terminal UI
-func RunTUI(store *CardStore) error {
+func RunTUI(store *storage.CardStore) error {
 	m := initModel(store)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
