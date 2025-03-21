@@ -97,7 +97,7 @@ jobs:
       run: go build -v -o ${{ matrix.artifact_name }} .
 
     - name: Upload build artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.asset_name }}
         path: ${{ matrix.artifact_name }}
