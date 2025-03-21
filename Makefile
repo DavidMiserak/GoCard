@@ -1,4 +1,5 @@
 # Filename: Makefile
+# Version: 0.0.0
 
 .PHONY: pre-commit-setup
 pre-commit-setup:
@@ -7,3 +8,15 @@ pre-commit-setup:
 	pre-commit install
 	pre-commit install --install-hooks
 	pre-commit run --all-files
+
+GoCard: main.go
+	CGO_ENABLED=0 go build -o GoCard
+
+.PHONY: test
+test:
+	go test -v ./...
+
+.PHONY: clean
+clean:
+	rm -f GoCard
+	go clean
