@@ -324,7 +324,58 @@ Then I should see a summary of my progress
 *** Related Issues
 - Issue 1: File-Based Storage Implementation
 - Issue 2: Implement SM-2 Spaced Repetition Algorithm
+
 ** TODO [#B] Issue 4: Markdown Rendering with Code Syntax Highlighting
+:PROPERTIES:
+:EFFORT:   16:00
+:END:
+
+*** User Story
+As a developer using flashcards for programming concepts,
+I need proper rendering of markdown with syntax highlighting for code blocks
+So that I can effectively learn programming-related content.
+
+*** Details and Assumptions
+- Support full Markdown rendering
+- Implement syntax highlighting for 50+ programming languages
+- Ensure code blocks are properly formatted and readable
+- Support for common programming markdown extensions
+- Code blocks should be visually distinct from regular text
+- Display line numbers for longer code blocks
+- Handling of inline code vs. block code should be consistent
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given a card contains a code block with language specification
+When the card is displayed
+Then the code should be rendered with appropriate syntax highlighting
+
+Given a card contains various markdown elements (lists, tables, etc.)
+When the card is displayed
+Then all elements should be properly rendered according to markdown specifications
+
+Given a code block has a specific language specified
+When the card is rendered
+Then the syntax highlighting should match that language's conventions
+
+Given code examples of varying complexity
+When rendered in the application
+Then they should maintain proper indentation and formatting
+#+END_SRC
+
+*** Implementation Notes
+- Integrate Goldmark for markdown parsing
+- Use Chroma for syntax highlighting as mentioned in README
+- Create custom styling for code blocks
+- Support at least the following languages: Go, Python, JavaScript, Java, C/C++, SQL, HTML/CSS, Rust, Ruby
+- Optimize rendering performance for cards with multiple code blocks
+- Add configuration options for syntax highlighting themes
+- Consider side-by-side diff view for comparing code (mentioned in README)
+
+*** Related Issues
+- Issue 1: File-Based Storage Implementation
+- Issue 13: Convert to Goldmark for Markdown Processing
+
 ** TODO [#B] Issue 6: Search and Filter Functionality
 :PROPERTIES:
 :EFFORT:   16:00
