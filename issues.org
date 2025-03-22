@@ -673,3 +673,446 @@ Then it should use that config file instead of the default location
 
 *** Related Issues
 - Issue 8: Customizable Styling and Themes
+* Testing [0/10]
+** TODO [#A] Issue 32: Enhance Storage Layer Testing with Mock Filesystem
+:PROPERTIES:
+:EFFORT:   16:00
+:END:
+
+*** User Story
+As a GoCard developer,
+I need reliable tests for the storage layer that don't depend on the actual filesystem,
+So that tests are deterministic, fast, and can cover error scenarios that are difficult to reproduce with real files.
+
+*** Details and Assumptions
+- Current tests depend on temporary directories on the real filesystem
+- We need to mock file operations to test error handling
+- File watching needs thorough testing with simulated events
+- We should use a library like Afero for filesystem abstraction
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given the storage package
+When tests are run
+Then they should use a mock filesystem instead of the real filesystem
+
+Given various error conditions (permission denied, disk full, etc.)
+When file operations are performed
+Then the code should handle these errors appropriately and the tests should verify this
+
+Given file watching functionality
+When filesystem events occur
+Then the tests should verify that events are handled correctly
+
+Given the test suite
+When it is run on any system
+Then it should not create or modify files outside of the test environment
+#+END_SRC
+
+*** Implementation Notes
+- Use Afero for filesystem abstraction
+- Create test helpers for common filesystem operations
+- Implement comprehensive error injection
+- Test concurrent file operations
+- Ensure cleanup after tests
+
+*** Related Issues
+- Issue 1: File-Based Storage Implementation
+- Issue 14: Implement Real-time File Watching with fsnotify
+
+** TODO [#A] Issue 33: Expand Core Algorithm (SM-2) Test Coverage
+:PROPERTIES:
+:EFFORT:   8:00
+:END:
+
+*** User Story
+As a GoCard developer,
+I need comprehensive tests for the SM-2 algorithm implementation,
+So that I can be confident it correctly schedules card reviews under all conditions.
+
+*** Details and Assumptions
+- SM-2 algorithm has basic tests but needs more coverage
+- Edge cases (very short/long intervals) need testing
+- Properties of the algorithm should be verified systematically
+- Real-world learning patterns should be simulated
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given property-based tests for the SM-2 algorithm
+When they are run
+Then they should verify key properties like "intervals increase with higher ratings"
+
+Given edge case tests
+When a card has extreme values (0 interval, max difficulty, etc.)
+Then the algorithm should handle these cases correctly
+
+Given tests with realistic learning patterns
+When simulating a user's learning over time
+Then the algorithm should produce expected scheduling results
+
+Given the SM-2 implementation
+When subjected to fuzz testing
+Then it should not crash or produce invalid results
+#+END_SRC
+
+*** Implementation Notes
+- Implement property-based testing (consider go-quicktest)
+- Add table-driven tests for edge cases
+- Create test fixtures for realistic learning patterns
+- Add benchmarks for performance-critical calculations
+
+*** Related Issues
+- Issue 2: Implement SM-2 Spaced Repetition Algorithm
+
+** TODO [#A] Issue 34: Comprehensive Deck Hierarchy Operation Testing
+:PROPERTIES:
+:EFFORT:   12:00
+:END:
+
+*** User Story
+As a GoCard developer,
+I need thorough tests for deck hierarchy operations,
+So that I can be confident that deck organization works correctly and maintains data integrity.
+
+*** Details and Assumptions
+- Deck hierarchy maps to directory structure
+- Operations include creating, moving, renaming, and deleting decks
+- Card operations across deck boundaries need testing
+- Statistics calculations for nested decks should be verified
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given a complex deck hierarchy
+When a deck is moved from one parent to another
+Then all cards should maintain correct associations
+
+Given a deck with subdecks
+When statistics are calculated
+Then they should correctly aggregate data from all levels
+
+Given operations that modify the deck hierarchy
+When they are performed concurrently
+Then data integrity should be maintained
+
+Given operations on decks
+When path manipulations are involved
+Then they should work correctly across platforms
+#+END_SRC
+
+*** Implementation Notes
+- Create test fixtures for standard deck hierarchies
+- Test cross-platform path handling
+- Implement concurrency tests for deck operations
+- Test error conditions thoroughly
+
+*** Related Issues
+- Issue 15: Implement Deck Organization through Directory Structure
+
+** TODO [#B] Issue 35: Configuration Management Testing
+:PROPERTIES:
+:EFFORT:   8:00
+:END:
+
+*** User Story
+As a GoCard developer,
+I need thorough tests for the configuration system,
+So that I can be confident it works correctly across platforms and with various user configurations.
+
+*** Details and Assumptions
+- Configuration is loaded from YAML files
+- Path expansion (~/ for home directory) needs cross-platform testing
+- Validation of configuration values should be tested
+- Default application needs verification
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given various configuration scenarios
+When the application loads
+Then it should correctly read and apply configuration values
+
+Given an invalid configuration
+When the application loads
+Then it should provide helpful error messages and fall back to defaults
+
+Given platform-specific paths
+When they are processed
+Then they should be handled correctly for the current platform
+
+Given missing configuration values
+When the application loads
+Then sensible defaults should be applied
+#+END_SRC
+
+*** Implementation Notes
+- Create test fixtures with various configuration scenarios
+- Mock filesystem for configuration file testing
+- Test platform-specific path handling
+- Test validation logic thoroughly
+
+*** Related Issues
+- Issue 11: Configuration File Management
+
+** TODO [#B] Issue 36: Card Operations and Metadata Handling Tests
+:PROPERTIES:
+:EFFORT:   12:00
+:END:
+
+*** User Story
+As a GoCard developer,
+I need thorough tests for card operations and metadata handling,
+So that I can be confident that card data is processed correctly and maintains integrity.
+
+*** Details and Assumptions
+- Cards are stored as Markdown files with YAML frontmatter
+- Operations include creating, modifying, and deleting cards
+- Metadata updates occur during reviews
+- Frontmatter parsing needs to be robust
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given various card operations
+When they are performed
+Then the data should be correctly persisted and loaded
+
+Given card metadata
+When it is updated during reviews
+Then the changes should be correctly saved to the frontmatter
+
+Given malformed frontmatter
+When a card is loaded
+Then the application should handle errors gracefully
+
+Given concurrent card operations
+When they are performed
+Then data integrity should be maintained
+#+END_SRC
+
+*** Implementation Notes
+- Create test fixtures with various card scenarios
+- Test frontmatter parsing edge cases
+- Implement concurrency tests for card operations
+- Test error conditions thoroughly
+
+*** Related Issues
+- Issue 1: File-Based Storage Implementation
+- Issue 13: Convert to Goldmark for Markdown Processing
+
+** TODO [#B] Issue 37: File Watching and Event Handling Tests
+:PROPERTIES:
+:EFFORT:   10:00
+:END:
+
+*** User Story
+As a GoCard developer,
+I need thorough tests for file watching and event handling,
+So that I can be confident that changes made outside the application are correctly synchronized.
+
+*** Details and Assumptions
+- File watching uses fsnotify
+- Events include creation, modification, deletion, and renaming
+- Recursive directory watching needs testing
+- Event debouncing should be verified
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given various filesystem events
+When they occur
+Then the application should correctly detect and handle them
+
+Given concurrent filesystem events
+When they occur rapidly
+Then the application should handle them correctly with appropriate debouncing
+
+Given nested directory structures
+When events occur at any level
+Then they should be correctly detected and processed
+
+Given temporary files created by editors
+When they appear in watched directories
+Then they should be handled appropriately
+#+END_SRC
+
+*** Implementation Notes
+- Mock filesystem events for deterministic testing
+- Test various event sequences and edge cases
+- Verify recursive directory watching
+- Test event debouncing logic
+
+*** Related Issues
+- Issue 14: Implement Real-time File Watching with fsnotify
+
+** TODO [#C] Issue 38: UI Component Testing Framework
+:PROPERTIES:
+:EFFORT:   16:00
+:END:
+
+*** User Story
+As a GoCard developer,
+I need a framework for testing UI components,
+So that I can verify that the user interface behaves correctly and renders properly.
+
+*** Details and Assumptions
+- UI uses Bubble Tea for terminal UI
+- Testing needs to cover model updates, view rendering, and input handling
+- Different views (deck browser, review, etc.) need testing
+- State transitions between views should be verified
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given a testing framework for UI components
+When tests are run
+Then they should verify that UI models update correctly
+
+Given various user inputs
+When they are processed by the UI
+Then the application should respond correctly
+
+Given state transitions between views
+When they occur
+Then the application should maintain correct state
+
+Given different terminal sizes
+When the UI renders
+Then it should adapt correctly
+#+END_SRC
+
+*** Implementation Notes
+- Create test harnesses for Bubble Tea models
+- Mock terminal IO for testing
+- Implement helpers for simulating user input
+- Test viewport calculations and rendering
+
+*** Related Issues
+- Issue 3: Basic Card Navigation and Review Interface
+
+** TODO [#B] Issue 39: Coverage Reporting and Visualization Improvements
+:PROPERTIES:
+:EFFORT:   6:00
+:END:
+
+*** User Story
+As a GoCard developer,
+I need improved test coverage reporting and visualization,
+So that I can identify areas needing improved test coverage and track progress over time.
+
+*** Details and Assumptions
+- Basic coverage scripts exist
+- We need per-package coverage breakdowns
+- Visual representation would aid understanding
+- Coverage trends should be tracked over time
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given the test suite
+When coverage is measured
+Then detailed per-package reports should be generated
+
+Given coverage data
+When it is processed
+Then visual representations should be created
+
+Given coverage over time
+When new tests are added
+Then trends should be tracked and visualized
+
+Given the CI pipeline
+When tests are run
+Then coverage reporting should be integrated
+#+END_SRC
+
+*** Implementation Notes
+- Enhance existing coverage scripts
+- Implement visualization using go-cover-treemap
+- Create a system for tracking coverage trends
+- Integrate with CI pipeline
+
+*** Related Issues
+None
+
+** TODO [#B] Issue 40: Test Data Generation and Fixtures
+:PROPERTIES:
+:EFFORT:   8:00
+:END:
+
+*** User Story
+As a GoCard developer,
+I need standardized test data and generators,
+So that I can create reliable, comprehensive tests for all aspects of the application.
+
+*** Details and Assumptions
+- Tests need predictable, standard data
+- Random data is useful for edge case testing
+- Fixtures should cover common scenarios
+- Generators should produce valid, realistic data
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given the test suite
+When tests are run
+Then they should use standardized test data
+
+Given test fixtures
+When they are used in tests
+Then they should cover common scenarios
+
+Given data generators
+When they are used
+Then they should produce valid, realistic data
+
+Given the test environment
+When tests are run
+Then cleanup should be automatic
+#+END_SRC
+
+*** Implementation Notes
+- Create standard test fixtures for cards and decks
+- Implement generators for random valid data
+- Ensure reproducibility of test data
+- Automate cleanup after tests
+
+*** Related Issues
+None
+
+** TODO [#B] Issue 41: Test Helpers and Assertion Utilities
+:PROPERTIES:
+:EFFORT:   8:00
+:END:
+
+*** User Story
+As a GoCard developer,
+I need test helpers and assertion utilities,
+So that I can write clean, maintainable tests more efficiently.
+
+*** Details and Assumptions
+- Common operations should have helpers
+- Domain-specific assertions would improve test readability
+- Builders for test objects would streamline test setup
+- Helpers should support table-driven tests
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given test helpers for common operations
+When they are used in tests
+Then they should simplify test setup and execution
+
+Given domain-specific assertions
+When tests verify behavior
+Then assertions should be clear and meaningful
+
+Given test object builders
+When tests require complex objects
+Then builders should simplify their creation
+
+Given the test suite
+When helpers are used throughout
+Then tests should be more readable and maintainable
+#+END_SRC
+
+*** Implementation Notes
+- Create helpers for common setup/teardown operations
+- Implement domain-specific assertion functions
+- Create builders for complex test objects
+- Document helper functions thoroughly
+
+*** Related Issues
+None
