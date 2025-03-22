@@ -27,7 +27,7 @@ type TUIModel struct {
 }
 
 // initModel initializes the TUI model
-func initModel(store *storage.CardStore) (TUIModel, error) {
+func initModel(store *storage.CardStore, startWithTutorial bool) (TUIModel, error) {
 	// Get terminal width and height
 	width, height, err := getTerminalSize()
 	if err != nil {
@@ -41,10 +41,22 @@ func initModel(store *storage.CardStore) (TUIModel, error) {
 	helpModel := help.New()
 	helpModel.ShowAll = false
 
-	// Create the main deck browser view as the starting view
-	deckView, err := views.NewDeckBrowserView(store, "", width, height)
-	if err != nil {
-		return TUIModel{}, fmt.Errorf("failed to create deck browser view: %w", err)
+	var initialView views.View
+
+	if startWithTutorial {
+		// Start with tutorial view for first-time users
+		tutorialView, err := views.NewTutorialView(store, width, height)
+		if err != nil {
+			return TUIModel{}, fmt.Errorf("failed to create tutorial view: %w", err)
+		}
+		initialView = tutorialView
+	} else {
+		// Default to deck browser view for returning users
+		deckView, err := views.NewDeckBrowserView(store, "", width, height)
+		if err != nil {
+			return TUIModel{}, fmt.Errorf("failed to create deck browser view: %w", err)
+		}
+		initialView = deckView
 	}
 
 	// Initialize the model
@@ -52,7 +64,7 @@ func initModel(store *storage.CardStore) (TUIModel, error) {
 		store:        store,
 		keys:         keys,
 		help:         helpModel,
-		currentView:  deckView,
+		currentView:  initialView,
 		previousView: nil,
 		showHelp:     false,
 		width:        width,
@@ -147,8 +159,8 @@ func (m TUIModel) View() string {
 }
 
 // RunTUI starts the terminal UI
-func RunTUI(store *storage.CardStore) error {
-	m, err := initModel(store)
+func RunTUI(store *storage.CardStore, startWithTutorial bool) error {
+	m, err := initModel(store, startWithTutorial)
 	if err != nil {
 		return fmt.Errorf("failed to initialize TUI model: %w", err)
 	}

@@ -36,12 +36,16 @@ func FileExists(path string) bool {
 }
 
 // DirectoryExists checks if a directory exists at the given path
-func DirectoryExists(path string) bool {
+// Returns a boolean indicating existence and any error encountered
+func DirectoryExists(path string) (bool, error) {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		return false
+		return false, nil
 	}
-	return info.IsDir()
+	if err != nil {
+		return false, err
+	}
+	return info.IsDir(), nil
 }
 
 // ReadFileContent reads the content of a file at the given path
