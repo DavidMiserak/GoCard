@@ -1,5 +1,4 @@
 # Filename: Makefile
-# Version: 0.0.0
 
 .PHONY: clean
 clean:
