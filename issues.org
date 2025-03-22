@@ -619,7 +619,7 @@ Then the application should follow those conventions
 *** Related Issues
 - Issue 11: Configuration File Management
 
-* Infrastructure [0/1]
+* Infrastructure [0/2]
 
 ** TODO [#B] Issue 11: Configuration File Management
 :PROPERTIES:
@@ -673,3 +673,72 @@ Then it should use that config file instead of the default location
 
 *** Related Issues
 - Issue 8: Customizable Styling and Themes
+
+** TODO [#B] Issue 23: Refactor Large Files for Improved Maintainability
+:PROPERTIES:
+:EFFORT:   24:00
+:END:
+
+*** User Story
+As a maintainer of GoCard,
+I need to refactor files that exceed 500 lines of code
+So that the codebase is more maintainable, testable, and easier to extend.
+
+*** Details and Assumptions
+- Several files have grown beyond 500 lines, making them difficult to maintain
+- Particularly large files include:
+  - internal/ui/tui.go (~1900 lines)
+  - internal/storage/store.go (~1600 lines)
+- These files handle multiple responsibilities
+- Refactoring should break these into smaller, more focused components
+- File structure should follow the single responsibility principle
+- Existing functionality must be preserved throughout the refactoring
+
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given a file that exceeds 500 lines
+When it is refactored
+Then it should be broken into multiple files with clear responsibilities
+And no resulting file should exceed 300 lines
+
+Given existing functionality in the application
+When refactoring is complete
+Then all functionality should still work as before
+
+Given the UI package
+When it is refactored
+Then it should be organized into subdirectories for input, views, and rendering
+
+Given the Storage package
+When it is refactored
+Then it should be organized into subdirectories for IO, parsing, and core operations
+#+END_SRC
+
+*** Implementation Notes
+- UI Package Refactoring:
+  - Break down tui.go into subdirectories:
+    - input/: Key bindings and input handling
+    - views/: Screen components
+    - render/: Styling and rendering utilities
+  - Extract view components into separate files
+  - Create clear interfaces between components
+
+- Storage Package Refactoring:
+  - Break down store.go into subdirectories:
+    - io/: File reading/writing operations
+    - parser/: Markdown parsing and formatting
+    - card_store.go: Card-specific operations
+    - deck_store.go: Deck-specific operations
+
+- Implement incrementally to ensure functionality is preserved at each step
+- Write tests for new components
+- Update existing tests to reflect new structure
+
+*** Related Issues
+- Issue 1: File-Based Storage Implementation
+- Issue 3: Basic Card Navigation and Review Interface
+- Issue 13: Convert to Goldmark for Markdown Processing
+- Issue 14: Implement Real-time File Watching with fsnotify
+
+*** Priority
+Medium - This refactoring will significantly improve code maintainability and is a prerequisite for implementing some of the more complex features like real-time file watching.
