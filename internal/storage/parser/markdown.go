@@ -1,4 +1,4 @@
-// Package parser handles parsing and formatting of markdown files.
+// File: internal/storage/parser/markdown.go (updated)
 package parser
 
 import (
@@ -94,24 +94,39 @@ func ParseMarkdown(content []byte) (*card.Card, error) {
 
 // RenderMarkdown renders markdown content to HTML
 func RenderMarkdown(content string) (string, error) {
-	md := createGoldmarkParser()
-	var buf bytes.Buffer
-	if err := md.Convert([]byte(content), &buf); err != nil {
-		return "", fmt.Errorf("failed to render markdown: %w", err)
+	// First, attempt to render with syntax highlighting
+	// This is the preferred method that handles code blocks with proper highlighting
+	config := DefaultSyntaxConfig()
+	html, err := RenderMarkdownWithHighlighting(content, config)
+
+	// If there's an error with the syntax highlighting, fall back to the standard renderer
+	if err != nil {
+		md := createGoldmarkParser()
+		var buf bytes.Buffer
+		if err := md.Convert([]byte(content), &buf); err != nil {
+			return "", fmt.Errorf("failed to render markdown: %w", err)
+		}
+		return buf.String(), nil
 	}
-	return buf.String(), nil
+
+	return html, nil
 }
 
 // createGoldmarkParser creates a configured Goldmark parser
 func createGoldmarkParser() goldmark.Markdown {
 	return goldmark.New(
-		goldmark.WithExtensions(extension.GFM),
+		goldmark.WithExtensions(
+			extension.GFM,         // GitHub Flavored Markdown
+			extension.Footnote,    // Support footnotes
+			extension.Typographer, // Smart typography
+		),
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),
 		),
 		goldmark.WithRendererOptions(
 			html.WithHardWraps(),
 			html.WithXHTML(),
+			html.WithUnsafe(), // Allow HTML in markdown
 		),
 	)
 }

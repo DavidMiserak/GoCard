@@ -1,4 +1,4 @@
-// Package render handles UI rendering and styling.
+// File: internal/ui/render/renderer.go (updated)
 package render
 
 import (
@@ -7,16 +7,21 @@ import (
 
 // Renderer handles markdown rendering and styling
 type Renderer struct {
-	mdRenderer *glamour.TermRenderer
-	styles     Styles
-	width      int
+	mdRenderer    *glamour.TermRenderer
+	styles        Styles
+	width         int
+	syntaxEnabled bool // Whether syntax highlighting is enabled
 }
 
 // NewRenderer creates a new renderer with the given width
 func NewRenderer(width int) (*Renderer, error) {
+	// Create a glamour renderer with default settings
 	mdRenderer, err := glamour.NewTermRenderer(
 		glamour.WithAutoStyle(),
 		glamour.WithWordWrap(width),
+		// We don't need to specify additional options here as our syntax
+		// highlighting is handled by the storage/parser package before
+		// the content reaches the UI renderer
 	)
 
 	if err != nil {
@@ -24,14 +29,17 @@ func NewRenderer(width int) (*Renderer, error) {
 	}
 
 	return &Renderer{
-		mdRenderer: mdRenderer,
-		styles:     DefaultStyles(),
-		width:      width,
+		mdRenderer:    mdRenderer,
+		styles:        DefaultStyles(),
+		width:         width,
+		syntaxEnabled: true, // Enable syntax highlighting by default
 	}, nil
 }
 
 // RenderMarkdown renders markdown content to terminal-friendly output
 func (r *Renderer) RenderMarkdown(content string) (string, error) {
+	// Let Glamour handle the rendering - it can process both regular markdown
+	// and HTML produced by our syntax highlighter
 	return r.mdRenderer.Render(content)
 }
 
@@ -80,4 +88,14 @@ func (r *Renderer) GetStyles() Styles {
 // SetStyles updates the renderer's styles
 func (r *Renderer) SetStyles(styles Styles) {
 	r.styles = styles
+}
+
+// SetSyntaxHighlighting enables or disables syntax highlighting
+func (r *Renderer) SetSyntaxHighlighting(enabled bool) {
+	r.syntaxEnabled = enabled
+}
+
+// IsSyntaxHighlightingEnabled returns whether syntax highlighting is enabled
+func (r *Renderer) IsSyntaxHighlightingEnabled() bool {
+	return r.syntaxEnabled
 }

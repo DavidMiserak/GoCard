@@ -1,4 +1,4 @@
-// Package storage provides compatibility functions for UI integration.
+// File: internal/storage/ui_compatibility.go (updated)
 package storage
 
 import (
@@ -9,4 +9,21 @@ import (
 // that forwards to the parser package
 func (s *CardStore) RenderMarkdown(content string) (string, error) {
 	return parser.RenderMarkdown(content)
+}
+
+// RenderMarkdownWithTheme renders markdown with a specific syntax highlighting theme
+func (s *CardStore) RenderMarkdownWithTheme(content string, theme string) (string, error) {
+	config := parser.DefaultSyntaxConfig()
+	config.Theme = theme
+	return parser.RenderMarkdownWithHighlighting(content, config)
+}
+
+// GetAvailableSyntaxThemes returns a list of available syntax highlighting themes
+func (s *CardStore) GetAvailableSyntaxThemes() []string {
+	return parser.AvailableThemes()
+}
+
+// GetDefaultSyntaxTheme returns the default syntax highlighting theme
+func (s *CardStore) GetDefaultSyntaxTheme() string {
+	return parser.DefaultSyntaxConfig().Theme
 }
