@@ -1,4 +1,4 @@
-// File: internal/storage/store_test.go
+// Package storage contains tests for the file-based storage system.
 package storage
 
 import (
@@ -379,8 +379,8 @@ func TestCardLoading(t *testing.T) {
 		FilePath:       filepath.Join(subDir, "subcard.md"),
 	}
 
-	// Format the card
-	content, err := formatCardAsMarkdown(subCard)
+	// Write the card file directly using our formatter
+	content, err := store.FormatCardAsMarkdown(subCard)
 	if err != nil {
 		t.Fatalf("Failed to format card as markdown: %v", err)
 	}
