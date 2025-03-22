@@ -12,9 +12,9 @@ import (
 type ViewState int
 
 const (
-	ViewReview ViewState = iota
-	ViewDeckList
-	ViewDeckBrowser
+	ViewReview      ViewState = iota
+	ViewDeckList              // Deck list navigation view
+	ViewDeckBrowser           // Deck browser (current deck details)
 	ViewDeckStats
 	ViewCreateDeck
 	ViewRenameDeck

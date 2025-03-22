@@ -74,8 +74,13 @@ func (v *DeckBrowserView) Update(msg tea.Msg, keys input.KeyMap) (View, tea.Cmd)
 			return reviewView, reviewView.Init()
 
 		case input.KeyMatches(msg, keys.ChangeDeck):
-			// This would launch the deck list view
-			v.SetError("Deck list view not yet implemented in refactored version")
+			// Launch the deck list view for deck navigation
+			deckListView, err := NewDeckListView(v.store, v.currentDeck.PathFromRoot(), v.width, v.height)
+			if err != nil {
+				v.SetError(fmt.Sprintf("Error opening deck list: %v", err))
+				return v, nil
+			}
+			return deckListView, deckListView.Init()
 
 		case input.KeyMatches(msg, keys.New):
 			// This would launch the create card view

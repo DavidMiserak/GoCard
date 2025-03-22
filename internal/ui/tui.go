@@ -98,9 +98,17 @@ func (m TUIModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case input.KeyMatches(msg, m.keys.Back):
 			// Handle going back to previous view if we're not in the main view
 			if m.currentView.State() != views.ViewDeckBrowser && m.previousView != nil {
-				m.currentView = m.previousView
-				m.previousView = nil
-				return m, nil
+				// Special handling for deck list view to ensure we return to proper deck browser
+				if m.currentView.State() == views.ViewDeckList {
+					// We should go back to deck browser for current deck
+					// The deck list view will handle this internally
+					// The view update below will take care of it
+				} else {
+					// For other views, switch back to previous view
+					m.currentView = m.previousView
+					m.previousView = nil
+					return m, nil
+				}
 			}
 		}
 
