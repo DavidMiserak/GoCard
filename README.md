@@ -49,19 +49,34 @@ go build -o GoCard ./cmd/gocard
 
 ## Project Structure
 
-GoCard follows a standard Go project layout:
+GoCard follows a standard Go project layout with a focus on modularity and clean separation of concerns:
 
 ```sh
 github.com/DavidMiserak/GoCard/
-├── cmd/gocard/          # Main application entry point
-├── internal/            # Private implementation packages
-│   ├── algorithm/       # Spaced repetition algorithms (SM-2)
-│   ├── card/            # Core card data models
-│   ├── deck/            # Deck management and organization
-│   ├── storage/         # File-based card storage
-│   └── ui/              # Terminal user interface
-├── assets/              # Application resources
-└── docs/                # Documentation
+├── cmd/gocard/                      # Main application entry point
+├── internal/                        # Private implementation packages
+│   ├── algorithm/                   # Spaced repetition algorithms (SM-2)
+│   ├── card/                        # Core card data models
+│   ├── deck/                        # Deck management and organization
+│   ├── storage/                     # File-based card storage
+│   │   ├── card_store.go            # CardStore core struct
+│   │   ├── card_ops.go              # Card operations
+│   │   ├── deck_ops.go              # Deck operations
+│   │   ├── review.go                # Review functionality
+│   │   ├── stats.go                 # Statistics and metrics
+│   │   ├── search.go                # Search functionality
+│   │   ├── io/                      # File system operations
+│   │   │   ├── file_ops.go          # File handling utilities
+│   │   │   └── watcher.go           # File change monitoring
+│   │   └── parser/                  # Content parsing
+│   │       ├── markdown.go          # Markdown parsing
+│   │       └── formatter.go         # Markdown formatting
+│   └── ui/                          # Terminal user interface
+│       ├── input/                   # Input handling
+│       ├── render/                  # Rendering utilities
+│       └── views/                   # Screen components
+├── assets/                          # Application resources
+└── docs/                            # Documentation
 ```
 
 This package organization provides:
