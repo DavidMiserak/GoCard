@@ -232,11 +232,13 @@ GoCard lets you browse your deck hierarchy with an intuitive navigation interfac
 3. Press `Enter` to select a deck or `Esc` to go back
 
 The deck navigation shows useful information for each deck:
+
 - Number of cards in the deck (including subdecks)
 - Number of cards due for review
 - Visual breadcrumb trail showing your current location
 
 Keyboard shortcuts make navigation efficient:
+
 - Arrow keys, `j`/`k` (vim), or `Ctrl+n`/`Ctrl+p` (emacs) to move up/down
 - `Enter`, `l` (vim), or `Ctrl+f` (emacs) to select a deck
 - `Esc`, `h` (vim), or `Ctrl+b` (emacs) to go back

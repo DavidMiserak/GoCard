@@ -15,6 +15,7 @@ const (
 	ViewReview      ViewState = iota
 	ViewDeckList              // Deck list navigation view
 	ViewDeckBrowser           // Deck browser (current deck details)
+	ViewTutorial
 	ViewDeckStats
 	ViewCreateDeck
 	ViewRenameDeck
