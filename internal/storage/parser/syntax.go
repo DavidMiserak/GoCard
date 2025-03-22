@@ -115,12 +115,21 @@ func (r *CodeBlockRenderer) renderFencedCodeBlock(w util.BufWriter, source []byt
 	if err != nil {
 		// Fallback to plain text if highlighting fails
 		highlighted = escapeHTML(code.String())
-		w.WriteString("<pre><code>")
-		w.WriteString(highlighted)
-		w.WriteString("</code></pre>")
+		if _, err := w.WriteString("<pre><code>"); err != nil {
+			return ast.WalkStop, err
+		}
+		if _, err := w.WriteString(highlighted); err != nil {
+			return ast.WalkStop, err
+		}
+		if _, err := w.WriteString("</code></pre>"); err != nil {
+			return ast.WalkStop, err
+		}
+
 	} else {
 		// Write the highlighted code
-		w.WriteString(highlighted)
+		if _, err := w.WriteString(highlighted); err != nil {
+			return ast.WalkStop, err
+		}
 	}
 
 	return ast.WalkSkipChildren, nil
@@ -147,12 +156,21 @@ func (r *CodeBlockRenderer) renderCodeBlock(w util.BufWriter, source []byte, n a
 	if err != nil {
 		// Fallback to plain text if highlighting fails
 		highlighted = escapeHTML(code.String())
-		w.WriteString("<pre><code>")
-		w.WriteString(highlighted)
-		w.WriteString("</code></pre>")
+		if _, err := w.WriteString("<pre><code>"); err != nil {
+			return ast.WalkStop, err
+		}
+		if _, err := w.WriteString(highlighted); err != nil {
+			return ast.WalkStop, err
+		}
+		if _, err := w.WriteString("</code></pre>"); err != nil {
+			return ast.WalkStop, err
+		}
+
 	} else {
 		// Write the highlighted code
-		w.WriteString(highlighted)
+		if _, err := w.WriteString(highlighted); err != nil {
+			return ast.WalkStop, err
+		}
 	}
 
 	return ast.WalkSkipChildren, nil

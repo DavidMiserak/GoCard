@@ -9,6 +9,8 @@ import (
 )
 
 // createExampleContent creates comprehensive example content
+//
+//nolint:unused // Will be used in the future
 func createExampleContent(store storage.CardStoreInterface) error {
 	// Create main category decks
 	programmingDeck, err := store.CreateDeck("Programming", nil)
@@ -532,11 +534,11 @@ class Pizza {
     private String dough;
     private String sauce;
     private String topping;
-    
+
     public void setDough(String dough) { this.dough = dough; }
     public void setSauce(String sauce) { this.sauce = sauce; }
     public void setTopping(String topping) { this.topping = topping; }
-    
+
     public void describe() {
         System.out.println("Pizza with " + dough + " dough, " + sauce + " sauce, and " + topping + " topping");
     }
@@ -553,7 +555,7 @@ interface PizzaBuilder {
 // Concrete builder
 class HawaiianPizzaBuilder implements PizzaBuilder {
     private Pizza pizza = new Pizza();
-    
+
     public void buildDough() { pizza.setDough("thin"); }
     public void buildSauce() { pizza.setSauce("mild"); }
     public void buildTopping() { pizza.setTopping("ham and pineapple"); }
@@ -563,11 +565,11 @@ class HawaiianPizzaBuilder implements PizzaBuilder {
 // Director
 class Cook {
     private PizzaBuilder pizzaBuilder;
-    
+
     public void setPizzaBuilder(PizzaBuilder pb) { pizzaBuilder = pb; }
-    
+
     public Pizza getPizza() { return pizzaBuilder.getPizza(); }
-    
+
     public void constructPizza() {
         pizzaBuilder.buildDough();
         pizzaBuilder.buildSauce();

@@ -58,6 +58,8 @@ func isDirEmpty(dirPath string) (bool, error) {
 }
 
 // handleFirstRun handles the first run experience
+//
+//nolint:unused // Will be used in the future
 func handleFirstRun(store storage.CardStoreInterface, cfg *config.Config, useTUI bool) {
 	// Create onboarding content
 	createOnboardingContent(store)
@@ -76,6 +78,8 @@ func handleFirstRun(store storage.CardStoreInterface, cfg *config.Config, useTUI
 }
 
 // showWelcomeMessage displays a welcome message for first-time users
+//
+//nolint:unused // Will be used in the future
 func showWelcomeMessage() {
 	fmt.Println(`
 		┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -91,7 +95,12 @@ func showWelcomeMessage() {
 	// Ask if user wants to see a quick tutorial
 	fmt.Println("Would you like to see a quick tutorial? (y/n)")
 	reader := bufio.NewReader(os.Stdin)
-	input, _ := reader.ReadString('\n')
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("Error reading input:", err)
+		// Depending on context, you might want to handle this differently
+	}
+
 	input = strings.TrimSpace(strings.ToLower(input))
 
 	if input == "y" || input == "yes" {
@@ -104,6 +113,8 @@ func showWelcomeMessage() {
 }
 
 // showQuickTutorial displays a quick tutorial for first-time users
+//
+//nolint:unused // Will be used in the future
 func showQuickTutorial() {
 	tutorials := []struct {
 		title   string
@@ -136,7 +147,10 @@ func showQuickTutorial() {
 		if i < len(tutorials)-1 {
 			fmt.Println("\nPress Enter to continue...")
 			reader := bufio.NewReader(os.Stdin)
-			reader.ReadString('\n')
+			if _, err := reader.ReadString('\n'); err != nil {
+				fmt.Println("Error reading input:", err)
+				// Depending on context, you might want to handle this differently
+			}
 		}
 	}
 
@@ -145,6 +159,8 @@ func showQuickTutorial() {
 }
 
 // createOnboardingContent creates initial content for first-time users
+//
+//nolint:unused // Will be used in the future
 func createOnboardingContent(store storage.CardStoreInterface) {
 	// Create Getting Started deck
 	gettingStartedDeck, err := store.CreateDeck("Getting Started", nil)

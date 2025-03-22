@@ -9,6 +9,8 @@ import (
 // They can be removed after updating UI code to use the new storage API.
 
 // renderMarkdown is a helper function that forwards to the storage package
+//
+//nolint:unused // Will be used in the future
 func renderMarkdown(store *storage.CardStore, content string) (string, error) {
 	return store.RenderMarkdown(content)
 }
