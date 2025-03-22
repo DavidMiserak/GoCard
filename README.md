@@ -11,7 +11,7 @@ built in Go. It uses plain Markdown files organized in directories as
 its data source, making it perfect for developers who prefer working
 with text files and version control.
 
-> **Project Status**: Early development (v0.0.0) - Core functionality implemented but many features are in progress
+> **Project Status**: Early development (v0.0.0) - Core functionality implemented including real-time file watching
 
 ## Features
 
@@ -21,6 +21,7 @@ with text files and version control.
 - **Markdown Support**: Full Markdown rendering with code syntax highlighting
 - **Cross-Platform**: Works on Linux, macOS, and Windows
 - **Spaced Repetition Algorithm**: Implements the SM-2 algorithm for efficient learning
+- **Real-time File Watching**: Changes to card files are automatically detected and loaded
 - **Code-Focused**: Special features for programming-related cards:
   - Syntax highlighting for 50+ languages
   - Side-by-side diff view for comparing code
@@ -67,6 +68,7 @@ github.com/DavidMiserak/GoCard/
 │   │   ├── search.go                # Search functionality
 │   │   ├── io/                      # File system operations
 │   │   │   ├── file_ops.go          # File handling utilities
+│   │   │   ├── logger.go            # Logging system
 │   │   │   └── watcher.go           # File change monitoring
 │   │   └── parser/                  # Content parsing
 │   │       ├── markdown.go          # Markdown parsing
@@ -85,6 +87,24 @@ This package organization provides:
 - Better testability of individual components
 - Easier maintenance and extensibility
 - Adherence to Go best practices
+
+## Command-Line Options
+
+GoCard supports the following command-line options:
+
+```sh
+Usage: gocard [options] [cards_directory]
+
+Options:
+  -tui        Use terminal UI mode (default: true)
+  -example    Run in example mode with sample cards
+  -verbose    Enable detailed logging (useful for debugging)
+  -h, -help   Show help information
+```
+
+- The optional `cards_directory` parameter specifies the directory for your flashcards (default: ~/GoCard)
+- The `-example` flag creates sample decks and cards to demonstrate GoCard functionality
+- The `-verbose` flag enables detailed logs of file operations and debugging information
 
 ## Quick Start
 
@@ -260,6 +280,17 @@ The review process follows a simple flow:
    - Current card statistics (new, young, mature)
    - Next scheduled review date
 
+## Real-time File Synchronization
+
+GoCard continuously monitors your cards directory for changes, allowing you to:
+
+- Edit cards with your favorite text editor while GoCard is running
+- Add new cards that instantly appear in the application
+- Organize cards into different directories (decks)
+- Collaborate with others using Git or other version control systems
+
+Changes are detected and loaded in real-time without requiring a restart.
+
 ## Configuration
 
 Configuration is stored in `~/.gocard.yaml`:
@@ -337,10 +368,10 @@ Development tasks and feature plans are tracked in the project's [issues.org](is
 
 Current focus areas:
 
-- Real-time file watching
-- Advanced markdown rendering with code syntax highlighting
-- Search and filter functionality
+- Advanced searching and filtering
 - Import/export compatibility with other SRS systems
+- Code execution capabilities for programming cards
+- Enhanced configuration options
 
 ## Contributing
 

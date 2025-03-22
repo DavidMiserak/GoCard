@@ -12,6 +12,7 @@ import (
 
 	"github.com/DavidMiserak/GoCard/internal/algorithm"
 	"github.com/DavidMiserak/GoCard/internal/storage"
+	"github.com/DavidMiserak/GoCard/internal/storage/io"
 	"github.com/DavidMiserak/GoCard/internal/ui"
 )
 
@@ -19,8 +20,10 @@ func main() {
 	// Define command-line flags
 	var useTUI bool
 	var exampleMode bool
+	var verbose bool
 	flag.BoolVar(&useTUI, "tui", true, "Use terminal UI mode")
 	flag.BoolVar(&exampleMode, "example", false, "Run in example mode with sample cards")
+	flag.BoolVar(&verbose, "verbose", false, "Enable verbose logging")
 	flag.Parse()
 
 	// Create or use the default directory for flashcards
@@ -42,11 +45,30 @@ func main() {
 		log.Fatalf("Failed to initialize card store: %v", err)
 	}
 
+	// Configure logging based on mode
+	if useTUI && !verbose {
+		// Disable or minimize logging in TUI mode unless verbose flag is set
+		store.DisableLogging()
+		io.EnableLogging(false)
+	} else if verbose {
+		// Enable debug logging in verbose mode
+		store.SetLogLevel(io.DEBUG)
+	}
+
+	// Ensure we clean up resources when the program exits
+	defer store.Close()
+
 	// If example mode is enabled, create demo decks and cards
 	if exampleMode {
 		fmt.Printf("Creating example decks and cards in: %s\n", cardsDir)
 		if err := createExampleDecksAndCards(store); err != nil {
 			log.Fatalf("Failed to create example content: %v", err)
+		}
+
+		// After creating example content, restart the file watcher
+		// This ensures all the new directories are being watched
+		if err := store.WatchForChanges(); err != nil {
+			fmt.Printf("Warning: Failed to restart file watcher after creating examples: %v\n", err)
 		}
 	}
 

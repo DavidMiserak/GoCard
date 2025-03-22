@@ -27,6 +27,7 @@ type FileWatcher struct {
 	isRunning     bool
 	ignoredFiles  []string
 	debounceDelay time.Duration
+	logger        *Logger
 }
 
 // NewFileWatcher creates a new FileWatcher for the given root directory
@@ -35,6 +36,8 @@ func NewFileWatcher(rootDir string) (*FileWatcher, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create file watcher: %w", err)
 	}
+
+	logger := NewLogger(os.Stdout, INFO)
 
 	return &FileWatcher{
 		watcher:       watcher,
@@ -45,7 +48,13 @@ func NewFileWatcher(rootDir string) (*FileWatcher, error) {
 		isRunning:     false,
 		ignoredFiles:  []string{".git", ".DS_Store", "Thumbs.db", "desktop.ini", "~$"},
 		debounceDelay: 100 * time.Millisecond,
+		logger:        logger,
 	}, nil
+}
+
+// SetLogger sets the logger for this watcher
+func (fw *FileWatcher) SetLogger(logger *Logger) {
+	fw.logger = logger
 }
 
 // Start begins watching the root directory and its subdirectories
@@ -63,6 +72,7 @@ func (fw *FileWatcher) Start() error {
 	go fw.processEvents()
 
 	fw.isRunning = true
+	fw.logger.Debug("File watcher started for %s", fw.rootDir)
 	return nil
 }
 
@@ -73,6 +83,7 @@ func (fw *FileWatcher) Stop() error {
 	}
 
 	fw.isRunning = false
+	fw.logger.Debug("File watcher stopped")
 	return fw.watcher.Close()
 }
 
@@ -93,6 +104,7 @@ func (fw *FileWatcher) addDirectory(dirPath string) error {
 		return fmt.Errorf("failed to watch directory %s: %w", dirPath, err)
 	}
 	fw.watchedDirs[dirPath] = true
+	fw.logger.Debug("Watching directory: %s", dirPath)
 
 	// Add all subdirectories recursively
 	return filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
@@ -112,6 +124,7 @@ func (fw *FileWatcher) addDirectory(dirPath string) error {
 				return fmt.Errorf("failed to watch directory %s: %w", path, err)
 			}
 			fw.watchedDirs[path] = true
+			fw.logger.Debug("Watching directory: %s", path)
 		}
 		return nil
 	})
@@ -122,12 +135,14 @@ func (fw *FileWatcher) removeDirectory(dirPath string) {
 	// Remove the directory from the watcher
 	_ = fw.watcher.Remove(dirPath)
 	delete(fw.watchedDirs, dirPath)
+	fw.logger.Debug("Stopped watching directory: %s", dirPath)
 
 	// Remove any subdirectories that were being watched
 	for watchedDir := range fw.watchedDirs {
 		if strings.HasPrefix(watchedDir, dirPath+string(filepath.Separator)) {
 			_ = fw.watcher.Remove(watchedDir)
 			delete(fw.watchedDirs, watchedDir)
+			fw.logger.Debug("Stopped watching subdirectory: %s", watchedDir)
 		}
 	}
 }
