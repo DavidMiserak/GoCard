@@ -11,7 +11,7 @@ built in Go. It uses plain Markdown files organized in directories as
 its data source, making it perfect for developers who prefer working
 with text files and version control.
 
-> **Project Status**: Early development (v0.0.0) - Core functionality implemented including real-time file watching
+> **Project Status**: Early development (v0.0.0) - Core functionality implemented including real-time file watching, SM-2 algorithm, and terminal UI
 
 ## Features
 
@@ -104,12 +104,15 @@ Options:
   -tui        Use terminal UI mode (default: true)
   -example    Run in example mode with sample cards
   -verbose    Enable detailed logging (useful for debugging)
+  -config     Path to configuration file (default: ~/.gocard.yaml)
+  -version    Show version information
   -h, -help   Show help information
 ```
 
 - The optional `cards_directory` parameter specifies the directory for your flashcards (default: ~/GoCard)
 - The `-example` flag creates sample decks and cards to demonstrate GoCard functionality
 - The `-verbose` flag enables detailed logs of file operations and debugging information
+- The `-config` flag allows you to specify a custom configuration file path
 
 ## Quick Start
 
@@ -326,12 +329,39 @@ Changes are detected and loaded in real-time without requiring a restart.
 Configuration is stored in `~/.gocard.yaml`:
 
 ```yaml
-default_cards_dir: ~/gocard
-theme: "auto"  # auto, light, dark
-highlight_theme: "monokai"  # code highlighting theme
+# GoCard Configuration File
+# This file controls the behavior of GoCard
+
+# Cards directory (default: ~/GoCard)
+cards_dir: "~/GoCard"
+
+# Logging settings
+logging:
+  # Log level: debug, info, warn, error
+  level: "info"
+  # Enable file logging
+  file_enabled: false
+  # Log file path
+  file_path: "~/.gocard.log"
+
+# UI settings
+ui:
+  # Theme: auto, light, dark
+  theme: "auto"
+  # Code highlighting theme
+  highlight_theme: "monokai"
+  # Show line numbers in code blocks
+  show_line_numbers: true
+
+# Spaced repetition settings
 spaced_repetition:
+  # Bonus for easy cards (higher = longer intervals)
   easy_bonus: 1.3
+  # Global interval modifier (higher = longer intervals)
   interval_modifier: 1.0
+  # Maximum interval in days
+  max_interval: 365
+  # Number of new cards per day
   new_cards_per_day: 20
 ```
 
