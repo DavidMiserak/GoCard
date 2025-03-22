@@ -1,13 +1,15 @@
 version: 2
 updates:
-  # Maintain dependencies for Go modules
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    # Ignore specific dependencies causing issues
+    ignore:
+      - dependency-name: "problematic-dependency"
+        versions: [">=1.0.0"]
 
-  # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
