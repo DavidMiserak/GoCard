@@ -132,7 +132,7 @@ touch ~/GoCard/programming/two-pointer-technique.md
 
 ```markdown
 ---
-tags: algorithms, techniques, arrays
+tags: [algorithms, techniques, arrays]
 created: 2023-04-15
 review_interval: 0
 ---
@@ -180,7 +180,7 @@ Cards are stored as markdown files with a YAML frontmatter section for metadata:
 
 ```markdown
 ---
-tags: tag1, tag2, tag3
+tags: [tag1, tag2, tag3]
 created: YYYY-MM-DD
 last_reviewed: YYYY-MM-DD
 review_interval: N
@@ -422,16 +422,18 @@ GoCard uses GitHub Actions for continuous integration:
 - Automated builds for Linux, macOS, and Windows
 - Release automation when tagging versions
 
-## Issue Tracking
+## Roadmap
 
-Development tasks and feature plans are tracked in the project's [issues.org](issues.org) file.
+The project is under active development with several features planned:
 
-Current focus areas:
+1. **Search and Filter Functionality**: Advanced search capabilities for your card collection
+2. **Import/Export Compatibility**: Interoperability with other SRS systems like Anki
+3. **Customizable Styling and Themes**: Personalize your learning environment
+4. **Code Testing Integration**: Run and test code snippets directly from cards
+5. **Cross-Platform Build Configuration**: Enhanced support for all operating systems
+6. **Configuration File Management**: More customization options
 
-- Advanced searching and filtering
-- Import/export compatibility with other SRS systems
-- Code execution capabilities for programming cards
-- Enhanced configuration options
+For more details, see the [issues.org](issues.org) file.
 
 ## Contributing
 
