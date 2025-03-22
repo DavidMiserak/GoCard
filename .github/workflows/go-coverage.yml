@@ -1,0 +1,72 @@
+name: Go Coverage
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24'
+        check-latest: true
+
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Go Cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Get dependencies
+      run: go mod download
+
+    - name: Run tests with coverage
+      run: go test -coverprofile=coverage.out -covermode=atomic ./...
+
+    - name: Convert coverage to lcov format
+      run: |
+        go install github.com/jandelgado/gcov2lcov@latest
+        gcov2lcov -infile=coverage.out -outfile=coverage.lcov
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.lcov
+        flags: unittests
+        fail_ci_if_error: false
+
+    - name: Generate Coverage Report
+      run: go tool cover -func=coverage.out > coverage.txt
+
+    - name: Check Coverage Threshold
+      run: |
+        COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%')
+        echo "Total coverage: $COVERAGE%"
+        if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+          echo "Coverage is below threshold of 70%"
+          exit 0  # Don't fail the build yet, just report
+        else
+          echo "Coverage meets threshold of 70%"
+        fi
+
+    - name: Upload coverage report artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: |
+          coverage.out
+          coverage.txt
+          coverage.lcov

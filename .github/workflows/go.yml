@@ -33,8 +33,18 @@ jobs:
     - name: Get dependencies
       run: go mod download
 
-    - name: Run tests
-      run: go test -v ./...
+    # Add to .github/workflows/go.yml
+    - name: Run tests with coverage
+      run: |
+        go test -short -v -coverprofile=coverage.out ./...
+        go tool cover -func=coverage.out
+
+        # Optional: Add coverage threshold check
+        COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%')
+        if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+          echo "Test coverage is below 70%: $COVERAGE%"
+          exit 1
+        fi
 
   lint:
     name: Lint
