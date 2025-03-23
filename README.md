@@ -230,8 +230,8 @@ Organize your cards however you want! The directory structure becomes the deck s
 
 GoCard lets you browse your deck hierarchy with an intuitive navigation interface:
 
-1. Press `c` from any screen to enter the deck navigation view
-2. Navigate between decks using arrow keys or vim/emacs keybindings
+1. Press `Ctrl+o` from any screen to enter the deck navigation view
+2. Navigate between decks using arrow keys or vim keybindings
 3. Press `Enter` to select a deck or `Esc` to go back
 
 The deck navigation shows useful information for each deck:
@@ -242,9 +242,9 @@ The deck navigation shows useful information for each deck:
 
 Keyboard shortcuts make navigation efficient:
 
-- Arrow keys, `j`/`k` (vim), or `Ctrl+n`/`Ctrl+p` (emacs) to move up/down
-- `Enter`, `l` (vim), or `Ctrl+f` (emacs) to select a deck
-- `Esc`, `h` (vim), or `Ctrl+b` (emacs) to go back
+- Arrow keys, `j`/`k` to move up/down
+- `Enter` to select a deck
+- `Esc` to go back
 
 ## Spaced Repetition System
 
@@ -275,26 +275,23 @@ GoCard provides a clean, minimalist terminal interface optimized for focused lea
 |----------------------|----------------------------|
 | `Space`              | Show answer                |
 | `0-5`                | Rate card difficulty       |
-| `c`                  | Change deck                |
-| `C`                  | Create new deck            |
-| `n`                  | Create new card            |
-| `s`                  | Search cards               |
-| `?`                  | Toggle help                |
-| `q`                  | Quit                       |
+| `Ctrl+o`             | Change deck                |
+| `Ctrl+Shift+n`       | Create new deck            |
+| `Ctrl+n`             | Create new card            |
+| `Ctrl+f`             | Search cards               |
+| `Ctrl+h` or `F1`     | Toggle help                |
+| `Ctrl+q`             | Quit                       |
 | **Navigation Keys**  |                            |
-| `↑/k/Ctrl+p`         | Move up in lists           |
-| `↓/j/Ctrl+n`         | Move down in lists         |
-| `Enter/l/Ctrl+f`     | Select/move forward        |
-| `Esc/h/Ctrl+b`       | Go back                    |
-
-Additional shortcuts planned for future versions:
-
-- `e` - Edit current card
-- `d` - Delete current card
-- `t` - Add/edit tags
-- `r` - Rename deck
-- `D` - Delete deck
-- `m` - Move cards between decks
+| `↑/k`                | Move up in lists           |
+| `↓/j`                | Move down in lists         |
+| `Enter`              | Select/move forward        |
+| `Esc`                | Go back                    |
+| `Ctrl+e`             | Edit current card          |
+| `Ctrl+d`             | Delete current card        |
+| `Ctrl+t`             | Add/edit tags              |
+| `Ctrl+r`             | Rename deck                |
+| `Ctrl+Shift+d`       | Delete deck                |
+| `Ctrl+m`             | Move cards between decks   |
 
 ## Review Process
 

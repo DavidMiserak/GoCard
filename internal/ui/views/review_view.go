@@ -147,11 +147,11 @@ func (v *ReviewView) Render(width, height int) string {
 	// Render footer
 	var footerText string
 	if v.reviewState == StateShowingQuestion {
-		footerText = "Press space to show answer, ? for help"
+		footerText = "Press space to show answer, ctrl+h for help"
 	} else if v.reviewState == StateShowingAnswer {
-		footerText = "Rate 0-5, ? for help"
+		footerText = "Rate 0-5, ctrl+h for help"
 	} else {
-		footerText = "Press esc to return to deck browser, q to quit, ? for help"
+		footerText = "Press esc to return to deck browser, ctrl+q to quit, ctrl+h for help"
 	}
 	sb.WriteString(v.renderer.FooterStyle(footerText))
 

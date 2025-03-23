@@ -123,7 +123,7 @@ func (v *DeckBrowserView) Render(width, height int) string {
 	sb.WriteString("\n")
 
 	// Render footer
-	footerText := "Press space to review, c to change deck, n for new card, ? for help"
+	footerText := "Press space to review, ctrl+o to change deck, ctrl+n for new card, ctrl+h for help"
 	sb.WriteString(v.renderer.FooterStyle(footerText))
 
 	return sb.String()
