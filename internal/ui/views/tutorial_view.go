@@ -37,41 +37,51 @@ func NewTutorialView(store storage.CardStoreInterface, width, height int) (*Tuto
 		return nil, err
 	}
 
-	// Define tutorial steps
+	// Define tutorial steps with enhanced content
 	steps := []TutorialStep{
 		{
 			Title:   "Welcome to GoCard!",
-			Content: "GoCard is a file-based spaced repetition system designed for developers and text-oriented learners.\n\nThis tutorial will guide you through the basic features of GoCard.",
+			Content: "GoCard is a file-based spaced repetition system designed for developers and text-oriented learners.\n\nYour flashcards are stored as plain Markdown files in regular directories, making them easy to edit, version control, and back up.\n\nThis tutorial will guide you through the key features of GoCard.",
 			Action:  "Press Space to continue...",
 		},
 		{
 			Title:   "File-Based Storage",
-			Content: "All cards are stored as Markdown files in regular directories.\n\nYou can edit these files with any text editor, and GoCard will automatically detect changes.",
+			Content: "All cards are stored as Markdown files with YAML frontmatter:\n\n```markdown\n---\ntags: [algorithms, techniques]\ncreated: 2023-04-15\nreview_interval: 0\n---\n\n# Card Title\n\n## Question\nYour question here?\n\n## Answer\nYour answer here.\n```\n\nYou can edit these files with any text editor, and GoCard will automatically detect changes.",
 			Action:  "Press Space to continue...",
 		},
 		{
 			Title:   "Decks and Organization",
-			Content: "Decks in GoCard are represented by directories.\n\n- Press `c` to browse and change decks\n- Press `C` to create a new deck\n- Nested directories = nested decks",
+			Content: "Decks in GoCard are represented by directories on your filesystem:\n\n- Directories = Decks\n- Subdirectories = Subdecks\n- Organization is simple and logical\n\nNavigation:\n- Press `ctrl+o` to browse and change decks\n- Press `ctrl+alt+n` to create a new deck\n- Use arrow keys or vim-style `j`/`k` to navigate deck lists\n- Press `Enter` to select a deck\n- Press `Esc` to go back",
 			Action:  "Press Space to continue...",
 		},
 		{
-			Title:   "Reviewing Cards",
-			Content: "During review:\n\n1. The question is shown first\n2. Press `Space` to reveal the answer\n3. Rate your recall from 0-5:\n   - 0-2: Difficult/incorrect (short interval)\n   - 3: Correct but required effort (moderate interval)\n   - 4-5: Easy (longer interval)",
+			Title:   "Reviewing Cards with Spaced Repetition",
+			Content: "GoCard uses the SM-2 algorithm (like Anki) for efficient learning:\n\n1. The question is shown first\n2. Press `Space` to reveal the answer\n3. Rate your recall from 0-5:\n   - **0-2**: Difficult/incorrect (short interval)\n   - **3**: Correct with effort (moderate interval)\n   - **4-5**: Easy (longer interval)\n\nYour rating determines when you'll see the card again - this is the power of spaced repetition!",
 			Action:  "Press Space to continue...",
 		},
 		{
 			Title:   "Creating and Editing Cards",
-			Content: "To manage your cards:\n\n- Press `n` to create a new card\n- Press `e` to edit the current card\n- Press `d` to delete a card\n- Press `t` to edit tags\n\nYou can also edit the Markdown files directly with your favorite text editor.",
+			Content: "To manage your cards:\n\n- Press `ctrl+n` to create a new card\n- Press `ctrl+e` to edit the current card\n- Press `ctrl+x d` to delete a card\n- Press `ctrl+t` to edit tags\n\nThe card editor has:\n- Title field\n- Tags field (comma separated)\n- Question and answer fields with markdown support\n- Preview mode (toggle with `ctrl+p`)\n- Auto-save feature\n\nYou can also edit the Markdown files directly with your favorite text editor.",
 			Action:  "Press Space to continue...",
 		},
 		{
-			Title:   "Navigation and Help",
-			Content: "Basic navigation:\n\n- Arrow keys / j,k: Move up/down\n- Enter: Select\n- Esc: Go back\n- ?: Toggle help\n- q: Quit",
+			Title:   "Markdown and Code Support",
+			Content: "GoCard offers rich formatting through Markdown:\n\n- **Bold**, *italic*, and ~~strikethrough~~ text\n- Lists, tables, and links\n- Code blocks with syntax highlighting for 50+ languages\n\n```go\nfunc fibonacci(n int) int {\n    if n <= 1 {\n        return n\n    }\n    return fibonacci(n-1) + fibonacci(n-2)\n}\n```\n\nThis makes GoCard perfect for learning programming concepts and algorithms.",
+			Action:  "Press Space to continue...",
+		},
+		{
+			Title:   "Navigation and Keyboard Shortcuts",
+			Content: "GoCard is keyboard-driven for maximum efficiency:\n\n**Core Navigation**\n- Arrow keys / `j`,`k`: Move up/down\n- `Enter`: Select\n- `Esc`: Go back\n- `Space`: Show answer / continue\n- `ctrl+h` or `F1`: Toggle help\n- `ctrl+q`: Quit\n\n**Review**\n- `0-5`: Rate card difficulty\n\n**Organization**\n- `ctrl+o`: Change deck\n- `ctrl+alt+n`: Create deck\n- `F2`: Rename deck",
+			Action:  "Press Space to continue...",
+		},
+		{
+			Title:   "File Watching and Real-time Updates",
+			Content: "GoCard continuously monitors your cards directory:\n\n- Edit cards with your favorite editor while GoCard is running\n- Add new cards that instantly appear in the application\n- Organize cards into different directories/decks\n- Collaborate using Git or other version control\n\nAll changes are detected and loaded in real-time with no need to restart.",
 			Action:  "Press Space to continue...",
 		},
 		{
 			Title:   "Sample Content",
-			Content: "We've created some sample cards and decks to help you get started.\n\nFeel free to explore them, modify them, or delete them as you learn the system.",
+			Content: "We've created some sample cards and decks to help you get started. They demonstrate:\n\n- Different card types and formats\n- Effective use of markdown features\n- Various code examples with syntax highlighting\n- Proper organization into decks and subdecks\n\nFeel free to explore, modify, or delete these examples as you learn the system.",
 			Action:  "Press Space to finish tutorial...",
 		},
 	}
