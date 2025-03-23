@@ -1,3 +1,5 @@
+// File: /internal/ui/tui.go
+
 // Package ui contains the terminal user interface for GoCard.
 package ui
 
@@ -24,6 +26,8 @@ type TUIModel struct {
 	showHelp     bool
 	width        int
 	height       int
+	// Add a flag to track if we're in card edit mode
+	editingCard bool
 }
 
 // initModel initializes the TUI model
@@ -34,7 +38,7 @@ func initModel(store *storage.CardStore, startWithTutorial bool) (TUIModel, erro
 		return TUIModel{}, err
 	}
 
-	// Initialize keymap
+	// Initialize keymap with enhanced editor keys
 	keys := input.NewKeyMap()
 
 	// Initialize help model
@@ -69,6 +73,7 @@ func initModel(store *storage.CardStore, startWithTutorial bool) (TUIModel, erro
 		showHelp:     false,
 		width:        width,
 		height:       height,
+		editingCard:  false,
 	}
 
 	return m, nil
@@ -98,7 +103,27 @@ func (m TUIModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Global key handlers
+		// Check if we're currently editing a card
+		if m.editingCard {
+			// Let the card edit view handle all keyboard input
+			// This ensures that our auto-save timer and other special handling works
+			newView, cmd := m.currentView.Update(msg, m.keys)
+			cmds = append(cmds, cmd)
+
+			// If the view has changed (e.g., saved and exited), update our state
+			if newView != m.currentView {
+				m.previousView = m.currentView
+				m.currentView = newView
+
+				// Check if we're no longer in the edit view
+				_, isEditView := m.currentView.(*views.CardEditView)
+				m.editingCard = isEditView
+			}
+
+			return m, tea.Batch(cmds...)
+		}
+
+		// Global key handlers for non-editing views
 		switch {
 		case input.KeyMatches(msg, m.keys.Quit):
 			return m, tea.Quit
@@ -139,6 +164,10 @@ func (m TUIModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if newView != m.currentView {
 		m.previousView = m.currentView
 		m.currentView = newView
+
+		// Check if we're entering or leaving the edit view
+		_, isEditView := m.currentView.(*views.CardEditView)
+		m.editingCard = isEditView
 	}
 
 	return m, tea.Batch(cmds...)

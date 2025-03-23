@@ -1,3 +1,5 @@
+// File: internal/ui/input/handlers.go
+
 package input
 
 import (
@@ -39,7 +41,13 @@ func IsNavKey(msg tea.KeyMsg) bool {
 		msg.String() == "home" ||
 		msg.String() == "end" ||
 		msg.String() == "pgup" ||
-		msg.String() == "pgdown"
+		msg.String() == "pgdown" ||
+		msg.String() == "tab" ||
+		msg.String() == "shift+tab" ||
+		msg.String() == "esc" ||
+		msg.String() == "alt+up" ||
+		msg.String() == "alt+down" ||
+		msg.String() == "enter"
 }
 
 // IsEnterKey returns true if the key is Enter
