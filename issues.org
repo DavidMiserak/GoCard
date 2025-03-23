@@ -376,6 +376,37 @@ Then they should maintain proper indentation and formatting
 - Issue 1: File-Based Storage Implementation
 - Issue 13: Convert to Goldmark for Markdown Processing
 
+** TODO [#B] Issue 5: Card Creation and Editing Interface
+:PROPERTIES:
+:EFFORT:   16:00
+:END:
+
+*** User Story
+As a user,
+I need a built-in editor for creating and modifying cards
+So that I can quickly add or update content without leaving the application.
+
+*** Details and Assumptions
+
+- Support creating new cards with a template
+- Allow editing existing cards
+- Provide markdown preview
+- Auto-save changes to file system
+- Support for setting and editing tags
+*** Acceptance Criteria
+#+BEGIN_SRC gherkin
+Given I am in the application
+When I press 'n' to create a new card
+Then I should see an editor with a template for the new card
+
+Given I am viewing a card
+When I press 'e' to edit
+Then I should see an editor with the current card's content
+
+Given I am editing a card
+When I save the changes
+Then the changes should be reflected in both the UI and the underlying file
+#+END_SRC
 ** TODO [#B] Issue 6: Search and Filter Functionality
 :PROPERTIES:
 :EFFORT:   16:00
