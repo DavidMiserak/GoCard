@@ -32,6 +32,11 @@ type FileWatcher struct {
 
 // NewFileWatcher creates a new FileWatcher for the given root directory
 func NewFileWatcher(rootDir string) (*FileWatcher, error) {
+	// Check if the directory exists
+	if _, err := os.Stat(rootDir); os.IsNotExist(err) {
+		return nil, fmt.Errorf("directory does not exist: %s", rootDir)
+	}
+
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create file watcher: %w", err)
