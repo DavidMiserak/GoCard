@@ -1,4 +1,4 @@
-// File: internal/ui/views/edit_card_view.go
+// File: internal/ui/views/card_edit_view.go
 package views
 
 import (
@@ -118,13 +118,14 @@ func (v *CardEditView) Update(msg tea.Msg, keys input.KeyMap) (View, tea.Cmd) {
 					v.previousField()
 					return v, nil
 				}
+			// For textareas, use alt+arrows instead of ctrl+tab
 			case FieldQuestion, FieldAnswer:
-				// Let textarea handle tab/shift+tab internally for indentation
-				// Only intercept when combined with a modifier key
-				if msg.String() == "ctrl+tab" {
+				// Let textarea handle tab internally for indentation
+				// Use alt+up/down for field navigation
+				if msg.String() == "alt+down" {
 					v.nextField()
 					return v, nil
-				} else if msg.String() == "ctrl+shift+tab" {
+				} else if msg.String() == "alt+up" {
 					v.previousField()
 					return v, nil
 				}
@@ -294,7 +295,7 @@ func (v *CardEditView) Render(width, height int) string {
 	// Render footer with shortcuts
 	var footerText string
 	if v.activeField == FieldQuestion || v.activeField == FieldAnswer {
-		footerText = "Ctrl+Tab: Next Field • Ctrl+Shift+Tab: Previous Field • Ctrl+p: Preview • Ctrl+s: Save • Esc: Cancel"
+		footerText = "Alt+Down: Next Field • Alt+Up: Previous Field • Ctrl+p: Preview • Ctrl+s: Save • Esc: Cancel"
 	} else {
 		footerText = "Tab: Next Field • Shift+Tab: Previous Field • Ctrl+p: Preview • Ctrl+s: Save • Esc: Cancel"
 	}
