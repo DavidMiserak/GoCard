@@ -81,6 +81,17 @@ func (v *ReviewView) Update(msg tea.Msg, keys input.KeyMap) (View, tea.Cmd) {
 				v.updateViewport()
 			}
 
+		case input.KeyMatches(msg, keys.Edit):
+			if v.currentCard != nil {
+				// Launch card edit view for current card
+				editView, err := NewCardEditView(v.store, v.currentCard, false, "", v.width, v.height)
+				if err != nil {
+					v.SetError(fmt.Sprintf("Error editing card: %v", err))
+					return v, nil
+				}
+				return editView, editView.Init()
+			}
+
 		case input.KeyMatches(msg, keys.Rate0),
 			input.KeyMatches(msg, keys.Rate1),
 			input.KeyMatches(msg, keys.Rate2),

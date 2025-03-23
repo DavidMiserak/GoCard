@@ -1,3 +1,5 @@
+// File: internal/ui/input/keymap.go
+
 // Package input handles user input and key bindings for the UI.
 package input
 
@@ -76,16 +78,16 @@ func NewKeyMap() KeyMap {
 			key.WithHelp("5", "rate: very easy"),
 		),
 		Edit: key.NewBinding(
-			key.WithKeys("ctrl+e"),
-			key.WithHelp("ctrl+e", "edit card"),
+			key.WithKeys("ctrl+e", "f4"),
+			key.WithHelp("ctrl+e/f4", "edit card"),
 		),
 		New: key.NewBinding(
 			key.WithKeys("ctrl+n"),
 			key.WithHelp("ctrl+n", "new card"),
 		),
 		Delete: key.NewBinding(
-			key.WithKeys("ctrl+d"),
-			key.WithHelp("ctrl+d", "delete card"),
+			key.WithKeys("ctrl+x d"),
+			key.WithHelp("ctrl+x d", "delete card"),
 		),
 		Tags: key.NewBinding(
 			key.WithKeys("ctrl+t"),
@@ -100,16 +102,16 @@ func NewKeyMap() KeyMap {
 			key.WithHelp("ctrl+o", "change deck"),
 		),
 		CreateDeck: key.NewBinding(
-			key.WithKeys("ctrl+shift+n"),
-			key.WithHelp("ctrl+shift+n", "create deck"),
+			key.WithKeys("ctrl+alt+n"),
+			key.WithHelp("ctrl+alt+n", "create deck"),
 		),
 		RenameDeck: key.NewBinding(
-			key.WithKeys("ctrl+r"),
-			key.WithHelp("ctrl+r", "rename deck"),
+			key.WithKeys("f2"),
+			key.WithHelp("f2", "rename deck"),
 		),
 		DeleteDeck: key.NewBinding(
-			key.WithKeys("ctrl+shift+d"),
-			key.WithHelp("ctrl+shift+d", "delete deck"),
+			key.WithKeys("ctrl+alt+d"),
+			key.WithHelp("ctrl+alt+d", "delete deck"),
 		),
 		MoveToDeck: key.NewBinding(
 			key.WithKeys("ctrl+m"),

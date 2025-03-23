@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/DavidMiserak/GoCard/internal/card"
 	"github.com/DavidMiserak/GoCard/internal/deck"
 	"github.com/DavidMiserak/GoCard/internal/storage"
 	"github.com/DavidMiserak/GoCard/internal/ui/input"
@@ -83,8 +84,14 @@ func (v *DeckBrowserView) Update(msg tea.Msg, keys input.KeyMap) (View, tea.Cmd)
 			return deckListView, deckListView.Init()
 
 		case input.KeyMatches(msg, keys.New):
-			// This would launch the create card view
-			v.SetError("Create card view not yet implemented in refactored version")
+			// Launch card creation view
+			newCard := card.NewCard("", "", "", []string{})
+			editView, err := NewCardEditView(v.store, newCard, true, v.currentDeck.PathFromRoot(), v.width, v.height)
+			if err != nil {
+				v.SetError(fmt.Sprintf("Error creating card: %v", err))
+				return v, nil
+			}
+			return editView, editView.Init()
 
 		case input.KeyMatches(msg, keys.Search):
 			// This would launch the search view
@@ -122,8 +129,8 @@ func (v *DeckBrowserView) Render(width, height int) string {
 	sb.WriteString(v.viewport.View())
 	sb.WriteString("\n")
 
-	// Render footer
-	footerText := "Press space to review, ctrl+o to change deck, ctrl+n for new card, ctrl+h for help"
+	// Render footer with updated key bindings
+	footerText := "Space: review • ctrl+o: change deck • ctrl+n: new card • ctrl+alt+n: new deck • ctrl+e/f4: edit • ctrl+h: help"
 	sb.WriteString(v.renderer.FooterStyle(footerText))
 
 	return sb.String()
@@ -164,10 +171,13 @@ func (v *DeckBrowserView) updateDeckBrowser() {
 	if stats["due_cards"].(int) > 0 {
 		content.WriteString("- Press space to start review session\n")
 	}
-	content.WriteString("- Press 'c' to change deck\n")
-	content.WriteString("- Press 'C' to create a new deck\n")
-	content.WriteString("- Press 'n' to create a new card\n")
-	content.WriteString("- Press 's' to search cards\n")
+	content.WriteString("- Press ctrl+o to change deck\n")
+	content.WriteString("- Press ctrl+alt+n to create a new deck\n")
+	content.WriteString("- Press ctrl+n to create a new card\n")
+	content.WriteString("- Press ctrl+f to search cards\n")
+	content.WriteString("- Press ctrl+e/f4 to edit card\n")
+	content.WriteString("- Press ctrl+x d to delete card\n")
+	content.WriteString("- Press f2 to rename deck\n")
 
 	// Add cards list if there are cards in this deck
 	if len(v.currentDeck.Cards) > 0 {
