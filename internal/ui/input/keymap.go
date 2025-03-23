@@ -44,7 +44,7 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 	}
 }
 
-// NewKeyMap creates the default keybindings
+// NewKeyMap creates the default keybindings with editor-friendly modifier keys
 func NewKeyMap() KeyMap {
 	return KeyMap{
 		ShowAnswer: key.NewBinding(
@@ -76,55 +76,55 @@ func NewKeyMap() KeyMap {
 			key.WithHelp("5", "rate: very easy"),
 		),
 		Edit: key.NewBinding(
-			key.WithKeys("e"),
-			key.WithHelp("e", "edit card"),
+			key.WithKeys("ctrl+e"),
+			key.WithHelp("ctrl+e", "edit card"),
 		),
 		New: key.NewBinding(
-			key.WithKeys("n"),
-			key.WithHelp("n", "new card"),
+			key.WithKeys("ctrl+n"),
+			key.WithHelp("ctrl+n", "new card"),
 		),
 		Delete: key.NewBinding(
-			key.WithKeys("d"),
-			key.WithHelp("d", "delete card"),
+			key.WithKeys("ctrl+d"),
+			key.WithHelp("ctrl+d", "delete card"),
 		),
 		Tags: key.NewBinding(
-			key.WithKeys("t"),
-			key.WithHelp("t", "edit tags"),
+			key.WithKeys("ctrl+t"),
+			key.WithHelp("ctrl+t", "edit tags"),
 		),
 		Search: key.NewBinding(
-			key.WithKeys("s"),
-			key.WithHelp("s", "search"),
+			key.WithKeys("ctrl+f"),
+			key.WithHelp("ctrl+f", "search"),
 		),
 		ChangeDeck: key.NewBinding(
-			key.WithKeys("c"),
-			key.WithHelp("c", "change deck"),
+			key.WithKeys("ctrl+o"),
+			key.WithHelp("ctrl+o", "change deck"),
 		),
 		CreateDeck: key.NewBinding(
-			key.WithKeys("C"),
-			key.WithHelp("C", "create deck"),
+			key.WithKeys("ctrl+shift+n"),
+			key.WithHelp("ctrl+shift+n", "create deck"),
 		),
 		RenameDeck: key.NewBinding(
-			key.WithKeys("r"),
-			key.WithHelp("r", "rename deck"),
+			key.WithKeys("ctrl+r"),
+			key.WithHelp("ctrl+r", "rename deck"),
 		),
 		DeleteDeck: key.NewBinding(
-			key.WithKeys("D"),
-			key.WithHelp("D", "delete deck"),
+			key.WithKeys("ctrl+shift+d"),
+			key.WithHelp("ctrl+shift+d", "delete deck"),
 		),
 		MoveToDeck: key.NewBinding(
-			key.WithKeys("m"),
-			key.WithHelp("m", "move to deck"),
+			key.WithKeys("ctrl+m"),
+			key.WithHelp("ctrl+m", "move to deck"),
 		),
 		Quit: key.NewBinding(
-			key.WithKeys("q", "ctrl+c"),
-			key.WithHelp("q", "quit"),
+			key.WithKeys("ctrl+q"),
+			key.WithHelp("ctrl+q", "quit"),
 		),
 		Help: key.NewBinding(
-			key.WithKeys("?"),
-			key.WithHelp("?", "toggle help"),
+			key.WithKeys("ctrl+h", "f1"),
+			key.WithHelp("ctrl+h/f1", "toggle help"),
 		),
 		Back: key.NewBinding(
-			key.WithKeys("esc", "backspace"),
+			key.WithKeys("esc"),
 			key.WithHelp("esc", "go back"),
 		),
 	}

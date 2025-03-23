@@ -243,7 +243,7 @@ func (v *DeckListView) Render(width, height int) string {
 	sb.WriteString("\n")
 
 	// Render footer - now with vim/emacs keys
-	footerText := "↑/j/k: Navigate • Enter/l: Select • Esc/h: Back • c: View Deck • ?: Help"
+	footerText := "↑/j/k: Navigate • Enter: Select • Esc: Back • ctrl+o: View Deck • ctrl+h: Help"
 	sb.WriteString(v.renderer.FooterStyle(footerText))
 
 	return sb.String()
