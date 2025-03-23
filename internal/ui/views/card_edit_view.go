@@ -57,7 +57,6 @@ type CardEditView struct {
 	answerInput   textarea.Model
 
 	previewContent   string
-	showHelp         bool
 	errorMsg         string
 	statusMsg        string
 	statusMsgTimer   int
