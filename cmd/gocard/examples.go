@@ -1,4 +1,4 @@
-// cmd/gocard/examples.go - Example content generation
+// cmd/gocard/examples.go - Uncommented example content generation
 package main
 
 import (
@@ -9,8 +9,6 @@ import (
 )
 
 // createExampleContent creates comprehensive example content
-//
-//nolint:unused // Will be used in the future
 func createExampleContent(store storage.CardStoreInterface) error {
 	// Create main category decks
 	programmingDeck, err := store.CreateDeck("Programming", nil)

@@ -81,7 +81,7 @@ func NewTutorialView(store storage.CardStoreInterface, width, height int) (*Tuto
 		},
 		{
 			Title:   "Sample Content",
-			Content: "We've created some sample cards and decks to help you get started. They demonstrate:\n\n- Different card types and formats\n- Effective use of markdown features\n- Various code examples with syntax highlighting\n- Proper organization into decks and subdecks\n\nFeel free to explore, modify, or delete these examples as you learn the system.",
+			Content: "We've created some sample cards and decks in your GoCard directory to help you get started. They demonstrate:\n\n- Different card types and formats\n- Effective use of markdown features\n- Various code examples with syntax highlighting\n- Proper organization into decks and subdecks\n\nExamples include programming cards for Go and Python, algorithm concepts, and more. Feel free to explore, modify, or delete these examples as you learn the system.",
 			Action:  "Press Space to finish tutorial...",
 		},
 	}
