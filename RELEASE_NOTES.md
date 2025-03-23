@@ -46,8 +46,9 @@ go install github.com/DavidMiserak/GoCard/cmd/gocard@latest
 ## Getting Started
 
 1. Launch GoCard:
+
 ```bash
-gocard
+GoCard
 ```
 
 2. By default, GoCard will create a directory at `~/GoCard` to store your cards.
@@ -63,6 +64,7 @@ This is an early release, and we welcome your feedback and contributions. Please
 ## Coming Soon
 
 We're actively working on more features:
+
 - Search and filter functionality
 - Import/export compatibility with other SRS systems
 - Customizable styling and themes
