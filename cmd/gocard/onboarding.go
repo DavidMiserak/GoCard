@@ -1,4 +1,4 @@
-// cmd/gocard/onboarding.go - Onboarding functionality with proper home directory handling
+// cmd/gocard/onboarding.go - Fixed by uncommenting required functions
 package main
 
 import (
@@ -58,8 +58,6 @@ func isDirEmpty(dirPath string) (bool, error) {
 }
 
 // handleFirstRun handles the first run experience
-//
-//nolint:unused // Will be used in the future
 func handleFirstRun(store storage.CardStoreInterface, cfg *config.Config, useTUI bool) {
 	// Create onboarding content
 	createOnboardingContent(store)
@@ -78,8 +76,6 @@ func handleFirstRun(store storage.CardStoreInterface, cfg *config.Config, useTUI
 }
 
 // showWelcomeMessage displays a welcome message for first-time users
-//
-//nolint:unused // Will be used in the future
 func showWelcomeMessage() {
 	fmt.Println(`
 		┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -113,8 +109,6 @@ func showWelcomeMessage() {
 }
 
 // showQuickTutorial displays a quick tutorial for first-time users
-//
-//nolint:unused // Will be used in the future
 func showQuickTutorial() {
 	tutorials := []struct {
 		title   string
@@ -159,8 +153,6 @@ func showQuickTutorial() {
 }
 
 // createOnboardingContent creates initial content for first-time users
-//
-//nolint:unused // Will be used in the future
 func createOnboardingContent(store storage.CardStoreInterface) {
 	// Create Getting Started deck
 	gettingStartedDeck, err := store.CreateDeck("Getting Started", nil)
@@ -183,7 +175,7 @@ func createOnboardingContent(store storage.CardStoreInterface) {
 	## Getting Started
 
 	1. **Navigate Decks**
-	- Press c to browse decks
+	- Press ctrl+o to browse decks
 	- Use arrow keys (or j/k) to navigate
 	- Press Enter to select a deck
 	- Press Esc to go back
@@ -194,11 +186,11 @@ func createOnboardingContent(store storage.CardStoreInterface) {
 	- Rate your recall from 0-5
 
 	3. **Create Cards**
-	- Press n to create a new card
+	- Press ctrl+n to create a new card
 	- Or create a markdown file directly in the deck directory
 
 	4. **Get Help**
-	- Press ? at any time to see all keyboard shortcuts
+	- Press ctrl+h at any time to see all keyboard shortcuts
 
 	Happy learning with GoCard!`
 
@@ -220,18 +212,18 @@ func createOnboardingContent(store storage.CardStoreInterface) {
 	|-------------------|----------------------------|
 	| Space             | Show answer                |
 	| 0-5               | Rate card difficulty       |
-	| c                 | Change deck                |
-	| C                 | Create new deck            |
-	| n                 | Create new card            |
-	| e                 | Edit current card          |
-	| d                 | Delete current card        |
-	| s                 | Search cards               |
-	| ?                 | Toggle help                |
-	| q                 | Quit                       |
-	| ↑/k/Ctrl+p        | Move up in lists           |
-	| ↓/j/Ctrl+n        | Move down in lists         |
-	| Enter/l/Ctrl+f    | Select/move forward        |
-	| Esc/h/Ctrl+b      | Go back                    |`
+	| ctrl+o            | Change deck                |
+	| ctrl+alt+n        | Create new deck            |
+	| ctrl+n            | Create new card            |
+	| ctrl+e            | Edit current card          |
+	| ctrl+x d          | Delete current card        |
+	| ctrl+f            | Search cards               |
+	| ctrl+h/F1         | Toggle help                |
+	| ctrl+q            | Quit                       |
+	| ↑/k               | Move up in lists           |
+	| ↓/j               | Move down in lists         |
+	| Enter             | Select/move forward        |
+	| Esc               | Go back                    |`
 
 	_, err = store.CreateCardInDeck(
 		"Keyboard Shortcuts",
