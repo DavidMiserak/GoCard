@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/DavidMiserak/GoCard/internal/card"
 	"github.com/DavidMiserak/GoCard/internal/deck"
 	"github.com/DavidMiserak/GoCard/internal/storage"
 	"github.com/DavidMiserak/GoCard/internal/ui/input"
@@ -83,8 +84,14 @@ func (v *DeckBrowserView) Update(msg tea.Msg, keys input.KeyMap) (View, tea.Cmd)
 			return deckListView, deckListView.Init()
 
 		case input.KeyMatches(msg, keys.New):
-			// This would launch the create card view
-			v.SetError("Create card view not yet implemented in refactored version")
+			// Launch card creation view
+			newCard := card.NewCard("", "", "", []string{})
+			editView, err := NewCardEditView(v.store, newCard, true, v.currentDeck.PathFromRoot(), v.width, v.height)
+			if err != nil {
+				v.SetError(fmt.Sprintf("Error creating card: %v", err))
+				return v, nil
+			}
+			return editView, editView.Init()
 
 		case input.KeyMatches(msg, keys.Search):
 			// This would launch the search view
