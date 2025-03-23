@@ -6,12 +6,10 @@
 
 ![GoCard Logo](assets/gocard-logo.webp)
 
-GoCard is a lightweight, file-based spaced repetition system (SRS)
-built in Go. It uses plain Markdown files organized in directories as
-its data source, making it perfect for developers who prefer working
-with text files and version control.
+GoCard is a lightweight, file-based spaced repetition system (SRS) built in Go.
+It uses plain Markdown files organized in directories as its data source, making it perfect for developers who prefer working with text files and version control.
 
-> **Project Status**: Early development (v0.0.0) - Core functionality implemented including real-time file watching, SM-2 algorithm, and terminal UI
+> **Project Status**: First release (v0.1.0) - Core functionality implemented including SM-2 algorithm, file watching, terminal UI, and markdown rendering with syntax highlighting.
 
 ## Features
 
@@ -101,12 +99,12 @@ GoCard supports the following command-line options:
 Usage: gocard [options] [cards_directory]
 
 Options:
-  -tui        Use terminal UI mode (default: true)
-  -example    Run in example mode with sample cards
-  -verbose    Enable detailed logging (useful for debugging)
-  -config     Path to configuration file (default: ~/.gocard.yaml)
-  -version    Show version information
-  -h, -help   Show help information
+-tui        Use terminal UI mode (default: true)
+-example    Run in example mode with sample cards
+-verbose    Enable detailed logging (useful for debugging)
+-config     Path to configuration file (default: ~/.gocard.yaml)
+-version    Show version information
+-h, -help   Show help information
 ```
 
 - The optional `cards_directory` parameter specifies the directory for your flashcards (default: ~/GoCard)
@@ -156,15 +154,15 @@ It's particularly useful for:
 Example (Two Sum in sorted array):
 ```python
 def two_sum(nums, target):
-    left, right = 0, len(nums) - 1
-    while left < right:
-        current_sum = nums[left] + nums[right]
-        if current_sum == target:
-            return [left, right]
-        elif current_sum < target:
-            left += 1
-        else:
-            right -= 1
+  left, right = 0, len(nums) - 1
+  while left < right:
+    current_sum = nums[left] + nums[right]
+    if current_sum == target:
+      return [left, right]
+    elif current_sum < target:
+      left += 1
+      else:
+      right -= 1
     return [-1, -1]  # No solution
 ```
 
@@ -222,8 +220,8 @@ Organize your cards however you want! The directory structure becomes the deck s
 │   │   └── channels.md
 │   └── interfaces.md
 └── vocabulary/
-    ├── spanish.md
-    └── german.md
+├── spanish.md
+└── german.md
 ```
 
 ## Deck Navigation
@@ -276,7 +274,7 @@ GoCard provides a clean, minimalist terminal interface optimized for focused lea
 | `Space`              | Show answer                |
 | `0-5`                | Rate card difficulty       |
 | `Ctrl+o`             | Change deck                |
-| `Ctrl+Shift+n`       | Create new deck            |
+| `Ctrl+alt+n`         | Create new deck            |
 | `Ctrl+n`             | Create new card            |
 | `Ctrl+f`             | Search cards               |
 | `Ctrl+h` or `F1`     | Toggle help                |
@@ -341,7 +339,7 @@ logging:
   # Log file path
   file_path: "~/.gocard.log"
 
-# UI settings
+  # UI settings
 ui:
   # Theme: auto, light, dark
   theme: "auto"
@@ -350,7 +348,7 @@ ui:
   # Show line numbers in code blocks
   show_line_numbers: true
 
-# Spaced repetition settings
+  # Spaced repetition settings
 spaced_repetition:
   # Bonus for easy cards (higher = longer intervals)
   easy_bonus: 1.3
@@ -423,11 +421,11 @@ GoCard uses GitHub Actions for continuous integration:
 
 The project is under active development with several features planned:
 
-1. **Search and Filter Functionality**: Advanced search capabilities for your card collection
-2. **Import/Export Compatibility**: Interoperability with other SRS systems like Anki
-3. **Customizable Styling and Themes**: Personalize your learning environment
-4. **Code Testing Integration**: Run and test code snippets directly from cards
-5. **Cross-Platform Build Configuration**: Enhanced support for all operating systems
+1. **Card Creation and Editing Interface**: In-app card creation and editing
+2. **Search and Filter Functionality**: Advanced search capabilities for your card collection
+3. **Import/Export Compatibility**: Interoperability with other SRS systems like Anki
+4. **Customizable Styling and Themes**: Personalize your learning environment
+5. **Code Testing Integration**: Run and test code snippets directly from cards
 6. **Configuration File Management**: More customization options
 
 For more details, see the [issues.org](issues.org) file.
