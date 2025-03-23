@@ -78,9 +78,12 @@ func TestMockFileSystem(t *testing.T) {
 	}
 
 	// Test Rename
-	fs.WriteFile("/test/old.txt", []byte("old data"), 0644)
-	err = fs.Rename("/test/old.txt", "/test/dir1/new.txt")
-	if err != nil {
+	if err := fs.WriteFile("/test/old.txt", []byte("old data"), 0644); err != nil {
+		t.Fatalf("Failed to write test file: %v", err)
+	}
+
+	// Add the missing rename operation
+	if err := fs.Rename("/test/old.txt", "/test/dir1/new.txt"); err != nil {
 		t.Errorf("Rename error: %v", err)
 	}
 
@@ -95,8 +98,12 @@ func TestMockFileSystem(t *testing.T) {
 	}
 
 	// Test RemoveAll
-	fs.WriteFile("/test/dir1/file1.txt", []byte("file1"), 0644)
-	fs.WriteFile("/test/dir1/dir2/file2.txt", []byte("file2"), 0644)
+	if err := fs.WriteFile("/test/dir1/file1.txt", []byte("file1"), 0644); err != nil {
+		t.Fatalf("Failed to write test file: %v", err)
+	}
+	if err := fs.WriteFile("/test/dir1/dir2/file2.txt", []byte("file2"), 0644); err != nil {
+		t.Fatalf("Failed to write test file: %v", err)
+	}
 
 	err = fs.RemoveAll("/test/dir1")
 	if err != nil {

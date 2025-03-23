@@ -13,6 +13,7 @@ import (
 )
 
 // mockFsnotifyWatcher is a mock implementation of fsnotify.Watcher
+// nolint:unused
 type mockFsnotifyWatcher struct {
 	events       chan FileEvent
 	errors       chan error
@@ -21,6 +22,7 @@ type mockFsnotifyWatcher struct {
 	closed       bool
 }
 
+// nolint:unused
 func newMockFsnotifyWatcher() *mockFsnotifyWatcher {
 	return &mockFsnotifyWatcher{
 		events:       make(chan FileEvent, 10),
@@ -31,6 +33,7 @@ func newMockFsnotifyWatcher() *mockFsnotifyWatcher {
 	}
 }
 
+// nolint:unused
 func (m *mockFsnotifyWatcher) Add(path string) error {
 	if m.closed {
 		return errors.New("watcher is closed")
@@ -39,6 +42,7 @@ func (m *mockFsnotifyWatcher) Add(path string) error {
 	return nil
 }
 
+// nolint:unused
 func (m *mockFsnotifyWatcher) Remove(path string) error {
 	if m.closed {
 		return errors.New("watcher is closed")
@@ -47,6 +51,7 @@ func (m *mockFsnotifyWatcher) Remove(path string) error {
 	return nil
 }
 
+// nolint:unused
 func (m *mockFsnotifyWatcher) Close() error {
 	if m.closed {
 		return errors.New("watcher already closed")
@@ -58,6 +63,7 @@ func (m *mockFsnotifyWatcher) Close() error {
 }
 
 // Mock creation function to replace the real fsnotify.NewWatcher
+// nolint:unused
 func mockNewFsnotifyWatcher() (*mockFsnotifyWatcher, error) {
 	return newMockFsnotifyWatcher(), nil
 }
@@ -78,7 +84,9 @@ func TestNewFileWatcher(t *testing.T) {
 	}
 
 	// Clean up
-	watcher.Stop()
+	if err := watcher.Stop(); err != nil {
+		t.Errorf("Failed to stop watcher: %v", err)
+	}
 
 	// Test with non-existent directory
 	nonExistentDir := filepath.Join(tempDir, "non-existent")
@@ -86,7 +94,9 @@ func TestNewFileWatcher(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error with non-existent directory, got nil")
 		if watcher != nil {
-			watcher.Stop()
+			if err := watcher.Stop(); err != nil {
+				t.Errorf("Failed to stop watcher: %v", err)
+			}
 		}
 	}
 }
@@ -97,7 +107,11 @@ func TestSetLogger(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create watcher: %v", err)
 	}
-	defer watcher.Stop()
+	defer func() {
+		if err := watcher.Stop(); err != nil {
+			t.Errorf("Failed to stop watcher: %v", err)
+		}
+	}()
 
 	var buf bytes.Buffer
 	logger := NewLogger(&buf, DEBUG)
@@ -151,7 +165,11 @@ func TestEventsAndErrors(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create watcher: %v", err)
 	}
-	defer watcher.Stop()
+	defer func() {
+		if err := watcher.Stop(); err != nil {
+			t.Errorf("Failed to stop watcher: %v", err)
+		}
+	}()
 
 	// Test Events() method
 	events := watcher.Events()
@@ -180,7 +198,11 @@ func TestAddDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create watcher: %v", err)
 	}
-	defer watcher.Stop()
+	defer func() {
+		if err := watcher.Stop(); err != nil {
+			t.Errorf("Failed to stop watcher: %v", err)
+		}
+	}()
 
 	// Since addDirectory is private, we need to test it through Start()
 	// This will call addDirectory internally
@@ -213,7 +235,11 @@ func TestRemoveDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create watcher: %v", err)
 	}
-	defer watcher.Stop()
+	defer func() {
+		if err := watcher.Stop(); err != nil {
+			t.Errorf("Failed to stop watcher: %v", err)
+		}
+	}()
 
 	// Start the watcher
 	err = watcher.Start()
