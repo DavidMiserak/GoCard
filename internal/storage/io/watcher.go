@@ -224,6 +224,12 @@ func (fw *FileWatcher) removeDirectory(dirPath string) {
 		return
 	}
 
+	// Check if the watcher itself is nil
+	if fw.watcher == nil {
+		fw.logger.Debug("Watcher is nil, skipping removal: %s", dirPath)
+		return
+	}
+
 	// Check if the directory is actually being watched
 	fw.mu.Lock()
 	_, exists := fw.watchedDirs[dirPath]
@@ -248,7 +254,7 @@ func (fw *FileWatcher) removeDirectory(dirPath string) {
 
 	// Now try to remove from the watcher - we do this after removing from our map
 	// to ensure we don't try to access a deleted map entry if something fails
-	if !fw.isClosed() {
+	if !fw.isClosed() && fw.watcher != nil {
 		// Use a defer/recover to catch any panics from the fsnotify library
 		func() {
 			defer func() {

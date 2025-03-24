@@ -203,8 +203,28 @@ func TestDecks(t *testing.T) {
 		t.Fatalf("Failed to move card between decks: %v", err)
 	}
 
-	// Verify the card file was moved to the new directory
+	// Calculate the expected new path
 	searchingDirPath := filepath.Join(algorithmsDirPath, "searching")
+	expectedNewPath := filepath.Join(searchingDirPath, filepath.Base(quickSortCard.FilePath))
+
+	// Get the moved card using the new path
+	movedCard, exists := store.GetCardByPath(expectedNewPath)
+	if !exists {
+		t.Errorf("Card not found at new location: %s", expectedNewPath)
+	} else {
+		// The card was successfully moved
+		// For backward compatibility, update the test's reference to point to the new card
+		quickSortCard = movedCard
+	}
+
+	// Verify the card file was moved to the new directory
+	if filepath.Dir(quickSortCard.FilePath) != searchingDirPath {
+		t.Errorf("Card file not moved to correct directory. Expected: %s, Got: %s",
+			searchingDirPath, filepath.Dir(quickSortCard.FilePath))
+	}
+
+	// Verify the card file was moved to the new directory
+	searchingDirPath = filepath.Join(algorithmsDirPath, "searching")
 	if filepath.Dir(quickSortCard.FilePath) != searchingDirPath {
 		t.Errorf("Card file not moved to correct directory. Expected: %s, Got: %s",
 			searchingDirPath, filepath.Dir(quickSortCard.FilePath))
