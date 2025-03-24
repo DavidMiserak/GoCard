@@ -1,4 +1,5 @@
-// internal/storage/io/mock_filesystem.go
+// File: internal/storage/io/mock_filesystem.go
+
 package io
 
 import (

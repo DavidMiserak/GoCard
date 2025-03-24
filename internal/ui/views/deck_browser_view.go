@@ -1,3 +1,5 @@
+// File: internal/ui/views/deck_browser_view.go
+
 package views
 
 import (

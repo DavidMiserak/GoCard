@@ -1,4 +1,5 @@
-// Package io provides file system operations for the GoCard storage system.
+// File: internal/storage/io/logger.go
+
 package io
 
 import (

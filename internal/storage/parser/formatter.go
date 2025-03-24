@@ -1,3 +1,5 @@
+// File: internal/storage/parser/formatter.go
+
 // Package parser handles parsing and formatting of markdown files.
 package parser
 

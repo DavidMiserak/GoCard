@@ -1,4 +1,5 @@
-// internal/storage/io/filesystem.go
+// File: internal/storage/io/filesystem.go
+
 package io
 
 import (

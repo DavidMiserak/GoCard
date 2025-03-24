@@ -1,3 +1,5 @@
+// File: internal/ui/views/deck_list_view.go
+
 // Package views contains the different UI views for GoCard.
 package views
 

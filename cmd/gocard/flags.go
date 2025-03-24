@@ -1,4 +1,4 @@
-// cmd/gocard/flags.go - Command-line flag handling
+// File: cmd/gocard/flags.go
 package main
 
 import (

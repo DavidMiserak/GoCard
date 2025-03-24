@@ -1,5 +1,5 @@
 // File: internal/storage/io/watcher.go
-// Package io provides file system operations for the GoCard storage system.
+
 package io
 
 import (

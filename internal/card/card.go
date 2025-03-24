@@ -1,4 +1,6 @@
 // File: internal/card/card.go
+
+// Package card provides a struct for flashcards and utility functions
 package card
 
 import (

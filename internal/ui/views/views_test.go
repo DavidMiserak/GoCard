@@ -1,3 +1,5 @@
+// File: internal/ui/views/views_test.go
+
 package views
 
 import (

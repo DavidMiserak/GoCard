@@ -1,4 +1,6 @@
-// internal/storage/card_store_interface.go - Interface for card storage
+// File: internal/storage/card_store_interface.go
+
+// Package storage implements the file-based storage system for GoCard.
 package storage
 
 import (

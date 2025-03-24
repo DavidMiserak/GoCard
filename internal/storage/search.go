@@ -1,3 +1,5 @@
+// File: internal/storage/search.go
+
 // Package storage implements the file-based storage system for GoCard.
 // This file contains operations for searching and filtering cards.
 package storage

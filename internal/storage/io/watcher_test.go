@@ -1,4 +1,5 @@
-// internal/storage/io/watcher_test.go
+// File: internal/storage/io/watcher_test.go
+
 package io
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/storage/card_store.go
+
 // Package storage implements the file-based storage system for GoCard.
 // It manages persisting cards and decks to the filesystem as markdown files.
 package storage

@@ -1,4 +1,5 @@
-// internal/storage/io/logger_test.go
+// File: internal/storage/io/logger_test.go
+
 package io
 
 import (

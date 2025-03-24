@@ -1,3 +1,5 @@
+// File: internal/storage/io/file_ops.go
+
 // Package io provides file system operations for the GoCard storage system.
 package io
 

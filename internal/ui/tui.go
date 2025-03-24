@@ -1,4 +1,4 @@
-// File: /internal/ui/tui.go
+// File: internal/ui/tui.go
 
 // Package ui contains the terminal user interface for GoCard.
 package ui

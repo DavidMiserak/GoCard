@@ -1,3 +1,5 @@
+// File: internal/ui/views/views.go
+
 // Package views contains the different UI views for GoCard.
 package views
 

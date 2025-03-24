@@ -1,4 +1,5 @@
 // File: internal/storage/parser/syntax.go
+
 package parser
 
 import (

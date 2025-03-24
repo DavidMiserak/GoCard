@@ -1,4 +1,4 @@
-// cmd/gocard/examples.go - Uncommented example content generation
+// File: cmd/gocard/examples.go
 package main
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/ui/views/review_view.go
+
 package views
 
 import (

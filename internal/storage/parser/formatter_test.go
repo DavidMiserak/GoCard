@@ -1,4 +1,5 @@
-// internal/storage/parser/formatter_test.go
+// File: internal/storage/parser/formatter_test.go
+
 package parser
 
 import (

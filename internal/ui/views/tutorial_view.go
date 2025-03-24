@@ -1,4 +1,5 @@
-// internal/ui/views/tutorial_view.go
+// File: internal/ui/views/tutorial_view.go
+
 package views
 
 import (

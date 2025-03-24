@@ -1,3 +1,5 @@
+// File: internal/ui/render/style.go
+
 package render
 
 import (

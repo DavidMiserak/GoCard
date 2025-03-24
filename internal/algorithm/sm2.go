@@ -1,4 +1,6 @@
 // File: internal/algorithm/sm2.go
+
+// Package algorithm provides implementations of spaced repetition algorithms
 package algorithm
 
 import (

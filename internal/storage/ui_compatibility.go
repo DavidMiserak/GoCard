@@ -1,4 +1,6 @@
 // File: internal/storage/ui_compatibility.go (updated)
+
+// Package storage implements the file-based storage system for GoCard.
 package storage
 
 import (

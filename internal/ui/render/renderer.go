@@ -1,4 +1,5 @@
-// File: internal/ui/render/renderer.go (updated)
+// File: internal/ui/render/renderer.go
+
 package render
 
 import (

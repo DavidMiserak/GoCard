@@ -1,3 +1,5 @@
+// File: internal/ui/views/views_compatibility.go
+
 // Package views contains compatibility shims for working with the storage package.
 package views
 

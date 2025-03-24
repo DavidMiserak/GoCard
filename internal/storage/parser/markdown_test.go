@@ -1,4 +1,5 @@
-// internal/storage/parser/markdown_test.go
+// File: internal/storage/parser/markdown_test.go
+
 package parser
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/ui/ui_test.go
+
 package ui
 
 import (

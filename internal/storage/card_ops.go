@@ -1,3 +1,5 @@
+// File: internal/storage/card_ops.go
+
 // Package storage implements the file-based storage system for GoCard.
 // This file contains operations related to managing individual flashcards.
 package storage

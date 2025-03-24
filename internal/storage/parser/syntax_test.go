@@ -1,4 +1,4 @@
-// internal/storage/parser/syntax_test.go
+// File: internal/storage/parser/syntax_test.go
 package parser
 
 import (

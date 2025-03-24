@@ -1,4 +1,6 @@
 // File: internal/deck/deck.go
+
+// Package deck provides a data structure to represent a collection of cards organized in a directory
 package deck
 
 import (

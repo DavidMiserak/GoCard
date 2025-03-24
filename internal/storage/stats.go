@@ -1,3 +1,5 @@
+// File: internal/storage/stats.go
+
 // Package storage implements the file-based storage system for GoCard.
 // This file contains operations for calculating and retrieving statistics.
 package storage

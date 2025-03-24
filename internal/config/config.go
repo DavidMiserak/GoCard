@@ -1,4 +1,6 @@
-// internal/config/config.go - Configuration management
+// File: internal/config/config.go
+
+// Package config provides functions to load and save the application configuration.
 package config
 
 import (

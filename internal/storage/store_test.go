@@ -1,3 +1,5 @@
+// File: internal/storage/store_test.go
+
 // Package storage contains tests for the file-based storage system.
 package storage
 

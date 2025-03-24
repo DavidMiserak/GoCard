@@ -1,4 +1,4 @@
-// cmd/gocard/onboarding.go - Fixed by uncommenting required functions
+// File: cmd/gocard/onboarding.go
 package main
 
 import (
