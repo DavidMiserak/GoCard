@@ -1,3 +1,4 @@
+// File: internal/storage/io/watcher.go
 // Package io provides file system operations for the GoCard storage system.
 package io
 
@@ -6,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -28,6 +30,8 @@ type FileWatcher struct {
 	ignoredFiles  []string
 	debounceDelay time.Duration
 	logger        *Logger
+	mu            sync.RWMutex
+	closed        bool // Explicitly track if watcher is closed
 }
 
 // NewFileWatcher creates a new FileWatcher for the given root directory
@@ -54,6 +58,8 @@ func NewFileWatcher(rootDir string) (*FileWatcher, error) {
 		ignoredFiles:  []string{".git", ".DS_Store", "Thumbs.db", "desktop.ini", "~$"},
 		debounceDelay: 100 * time.Millisecond,
 		logger:        logger,
+		mu:            sync.RWMutex{},
+		closed:        false,
 	}, nil
 }
 
@@ -64,32 +70,59 @@ func (fw *FileWatcher) SetLogger(logger *Logger) {
 
 // Start begins watching the root directory and its subdirectories
 func (fw *FileWatcher) Start() error {
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+
 	if fw.isRunning {
 		return fmt.Errorf("watcher is already running")
 	}
 
-	// Add root directory to watcher
-	if err := fw.addDirectory(fw.rootDir); err != nil {
+	if fw.closed || fw.watcher == nil {
+		return fmt.Errorf("watcher is closed or nil")
+	}
+
+	// Set running state before adding directories
+	fw.isRunning = true
+
+	// Add root directory to watcher (outside of lock)
+	fw.mu.Unlock()
+	err := fw.addDirectory(fw.rootDir)
+	fw.mu.Lock()
+
+	if err != nil {
+		fw.isRunning = false
 		return err
 	}
 
 	// Start the event processing goroutine
 	go fw.processEvents()
 
-	fw.isRunning = true
 	fw.logger.Debug("File watcher started for %s", fw.rootDir)
 	return nil
 }
 
 // Stop stops watching and closes channels
 func (fw *FileWatcher) Stop() error {
-	if !fw.isRunning {
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+
+	if !fw.isRunning || fw.closed || fw.watcher == nil {
 		return nil
 	}
 
+	// Mark as not running and closed
 	fw.isRunning = false
+	fw.closed = true
+
 	fw.logger.Debug("File watcher stopped")
-	return fw.watcher.Close()
+
+	// Close the watcher (this will close the event channels)
+	err := fw.watcher.Close()
+
+	// Clear watched directories
+	fw.watchedDirs = make(map[string]bool)
+
+	return err
 }
 
 // Events returns the channel of file events
@@ -102,13 +135,44 @@ func (fw *FileWatcher) Errors() <-chan error {
 	return fw.errors
 }
 
+// isClosed safely checks if the watcher is closed
+func (fw *FileWatcher) isClosed() bool {
+	fw.mu.RLock()
+	defer fw.mu.RUnlock()
+	return fw.closed || fw.watcher == nil
+}
+
+// isWatcherRunning safely checks if the watcher is running
+func (fw *FileWatcher) isWatcherRunning() bool {
+	fw.mu.RLock()
+	defer fw.mu.RUnlock()
+	return fw.isRunning && !fw.closed && fw.watcher != nil
+}
+
 // addDirectory adds a directory and its subdirectories to the watcher
 func (fw *FileWatcher) addDirectory(dirPath string) error {
+	// Skip if closed
+	if fw.isClosed() {
+		return fmt.Errorf("watcher is closed, cannot add directory: %s", dirPath)
+	}
+
 	// Add the directory itself
-	if err := fw.watcher.Add(dirPath); err != nil {
+	err := fw.watcher.Add(dirPath)
+	if err != nil {
+		// Defensive coding: check for specific signs that the watcher is closed
+		if strings.Contains(err.Error(), "closed") {
+			fw.mu.Lock()
+			fw.closed = true
+			fw.mu.Unlock()
+			return fmt.Errorf("watcher is closed, cannot add directory: %s", dirPath)
+		}
 		return fmt.Errorf("failed to watch directory %s: %w", dirPath, err)
 	}
+
+	fw.mu.Lock()
 	fw.watchedDirs[dirPath] = true
+	fw.mu.Unlock()
+
 	fw.logger.Debug("Watching directory: %s", dirPath)
 
 	// Add all subdirectories recursively
@@ -125,30 +189,94 @@ func (fw *FileWatcher) addDirectory(dirPath string) error {
 				}
 			}
 
-			if err := fw.watcher.Add(path); err != nil {
+			// Skip if watcher is closed
+			if fw.isClosed() {
+				return fmt.Errorf("watcher is closed during walk")
+			}
+
+			err := fw.watcher.Add(path)
+			if err != nil {
+				// Check for closed watcher
+				if strings.Contains(err.Error(), "closed") {
+					fw.mu.Lock()
+					fw.closed = true
+					fw.mu.Unlock()
+					return fmt.Errorf("watcher is closed, cannot add directory: %s", path)
+				}
 				return fmt.Errorf("failed to watch directory %s: %w", path, err)
 			}
+
+			fw.mu.Lock()
 			fw.watchedDirs[path] = true
+			fw.mu.Unlock()
+
 			fw.logger.Debug("Watching directory: %s", path)
 		}
 		return nil
 	})
 }
 
-// removeDirectory removes a directory from the watched list
+// removeDirectory removes a directory from the watched list - with extra safeguards
 func (fw *FileWatcher) removeDirectory(dirPath string) {
-	// Remove the directory from the watcher
-	_ = fw.watcher.Remove(dirPath)
-	delete(fw.watchedDirs, dirPath)
-	fw.logger.Debug("Stopped watching directory: %s", dirPath)
+	// Skip the entire operation if the watcher is closed
+	if fw.isClosed() {
+		fw.logger.Debug("Watcher is closed, skipping removal: %s", dirPath)
+		return
+	}
 
-	// Remove any subdirectories that were being watched
+	// Check if the directory is actually being watched
+	fw.mu.Lock()
+	_, exists := fw.watchedDirs[dirPath]
+	if !exists {
+		fw.mu.Unlock()
+		fw.logger.Debug("Directory not in watch list, skipping removal: %s", dirPath)
+		return
+	}
+
+	// Remove from our map first - this prevents other goroutines from
+	// trying to remove the same directory
+	delete(fw.watchedDirs, dirPath)
+
+	// Collect subdirectories to remove while we have the lock
+	var subdirsToRemove []string
 	for watchedDir := range fw.watchedDirs {
 		if strings.HasPrefix(watchedDir, dirPath+string(filepath.Separator)) {
-			_ = fw.watcher.Remove(watchedDir)
-			delete(fw.watchedDirs, watchedDir)
-			fw.logger.Debug("Stopped watching subdirectory: %s", watchedDir)
+			subdirsToRemove = append(subdirsToRemove, watchedDir)
 		}
+	}
+	fw.mu.Unlock()
+
+	// Now try to remove from the watcher - we do this after removing from our map
+	// to ensure we don't try to access a deleted map entry if something fails
+	if !fw.isClosed() {
+		// Use a defer/recover to catch any panics from the fsnotify library
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					fw.logger.Error("Panic when removing directory from watcher: %v", r)
+				}
+			}()
+
+			// Try to remove - but don't panic if it fails
+			err := fw.watcher.Remove(dirPath)
+			if err != nil {
+				fw.logger.Debug("Error removing directory from watcher: %s - %v", dirPath, err)
+
+				// If we get a specific error about closed watcher, mark as closed
+				if strings.Contains(err.Error(), "closed") {
+					fw.mu.Lock()
+					fw.closed = true
+					fw.mu.Unlock()
+				}
+			} else {
+				fw.logger.Debug("Stopped watching directory: %s", dirPath)
+			}
+		}()
+	}
+
+	// Remove subdirectories
+	for _, subdir := range subdirsToRemove {
+		fw.removeDirectory(subdir)
 	}
 }
 
@@ -158,9 +286,15 @@ func (fw *FileWatcher) processEvents() {
 	eventDebounce := make(map[string]time.Time)
 
 	for {
+		// Exit early if watcher is not running
+		if !fw.isWatcherRunning() {
+			return
+		}
+
 		select {
 		case event, ok := <-fw.watcher.Events:
 			if !ok {
+				// Channel was closed, exit the goroutine
 				return
 			}
 
@@ -186,21 +320,44 @@ func (fw *FileWatcher) processEvents() {
 			}
 			eventDebounce[event.Name] = now
 
+			// Skip further processing if watcher is closed
+			if fw.isClosed() {
+				return
+			}
+
 			// Handle directory creation
 			if event.Op&fsnotify.Create == fsnotify.Create {
+				// Check if it's a directory
 				if fi, err := os.Stat(event.Name); err == nil && fi.IsDir() {
+					// Skip if watcher is closed
+					if fw.isClosed() {
+						return
+					}
+
 					err := fw.addDirectory(event.Name)
 					if err != nil {
-						fw.errors <- err
+						// Only send error if still running
+						if fw.isWatcherRunning() {
+							fw.errors <- err
+						}
 					}
 				}
 			}
 
-			// Handle directory removal
+			// Handle directory removal with extra care
 			if event.Op&fsnotify.Remove == fsnotify.Remove {
-				if _, exists := fw.watchedDirs[event.Name]; exists {
+				fw.mu.RLock()
+				isWatched := fw.watchedDirs[event.Name]
+				fw.mu.RUnlock()
+
+				if isWatched && !fw.isClosed() {
 					fw.removeDirectory(event.Name)
 				}
+			}
+
+			// Skip if closed before sending event
+			if fw.isClosed() {
+				return
 			}
 
 			// Send the event to the events channel
@@ -225,9 +382,16 @@ func (fw *FileWatcher) processEvents() {
 
 		case err, ok := <-fw.watcher.Errors:
 			if !ok {
+				// Channel was closed, exit the goroutine
 				return
 			}
-			fw.errors <- err
+
+			// Only forward errors if still running
+			if fw.isWatcherRunning() {
+				fw.errors <- err
+			} else {
+				return
+			}
 		}
 	}
 }
