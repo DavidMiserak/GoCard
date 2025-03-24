@@ -1,17 +1,17 @@
-version: 2
-updates:
-  - package-ecosystem: "gomod"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    # Ignore specific dependencies causing issues
-    ignore:
-      - dependency-name: "problematic-dependency"
-        versions: [">=1.0.0"]
+name: Dependabot Auto-Merge
+on:
+  pull_request:
+    branches: 
+      - main
+      - master
 
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
+jobs:
+  dependabot:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    steps:
+      - name: Enable auto-merge for Dependabot PRs
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
