@@ -26,7 +26,7 @@ lint:
 
 .PHONY: test
 test:
-	go test ./...
+	go test -timeout 3m -race ./... | tee test.log
 
 .PHONY: test-cover
 test-cover:

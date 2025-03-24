@@ -13,7 +13,7 @@ import (
 	"github.com/DavidMiserak/GoCard/internal/deck"
 )
 
-// CreateDeck creates a new deck directory
+// CreateDeck creates a new deck directory with thread-safety
 func (s *CardStore) CreateDeck(name string, parentDeck *deck.Deck) (*deck.Deck, error) {
 	// Sanitize name for filesystem
 	sanitizedName := strings.ToLower(name)
@@ -36,16 +36,19 @@ func (s *CardStore) CreateDeck(name string, parentDeck *deck.Deck) (*deck.Deck, 
 		return nil, fmt.Errorf("deck already exists: %s", deckPath)
 	}
 
-	// Create the directory
+	// Create the directory (filesystem operation outside the lock)
 	if err := os.MkdirAll(deckPath, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create deck directory: %w", err)
 	}
 
-	// Create the deck object
+	// Create the new deck object
 	newDeck := deck.NewDeck(deckPath, parentDeck)
-	s.Decks[deckPath] = newDeck
 
-	// Add as subdeck to parent
+	s.decksMu.Lock()
+	s.Decks[deckPath] = newDeck
+	s.decksMu.Unlock()
+
+	// Add as subdeck to parent (this will handle parent deck locking)
 	parentDeck.AddSubDeck(newDeck)
 
 	return newDeck, nil
@@ -58,30 +61,38 @@ func (s *CardStore) DeleteDeck(deckObj *deck.Deck) error {
 		return fmt.Errorf("cannot delete the root deck")
 	}
 
-	// Remove the directory and all its contents
+	// Get all cards and decks to be removed
+	allCards := deckObj.GetAllCards()
+	allSubDecks := deckObj.AllDecks()
+	parentDeck := deckObj.ParentDeck
+
+	// Remove the directory and all its contents (filesystem operation outside lock)
 	if err := os.RemoveAll(deckObj.Path); err != nil {
 		return fmt.Errorf("failed to delete deck directory: %w", err)
 	}
 
 	// Remove all cards in this deck and its subdecks from our maps
-	for _, card := range deckObj.GetAllCards() {
+	s.cardsMu.Lock()
+	for _, card := range allCards {
 		delete(s.Cards, card.FilePath)
 	}
+	s.cardsMu.Unlock()
 
-	// Remove all subdecks from our map
-	for _, subDeck := range deckObj.AllDecks() {
-		if subDeck != deckObj { // Skip the deck itself, we'll remove it separately
+	// Remove all subdecks from our map (including the deck itself)
+	s.decksMu.Lock()
+	for _, subDeck := range allSubDecks {
+		if subDeck != deckObj { // Skip the deck itself for now
 			delete(s.Decks, subDeck.Path)
 		}
 	}
-
-	// Remove the deck from its parent
-	if deckObj.ParentDeck != nil {
-		delete(deckObj.ParentDeck.SubDecks, deckObj.Name)
-	}
-
-	// Remove the deck from our map
+	// Now remove the deck itself
 	delete(s.Decks, deckObj.Path)
+	s.decksMu.Unlock()
+
+	// Remove the deck from its parent (thread-safe)
+	if parentDeck != nil {
+		parentDeck.RemoveSubDeck(deckObj.Name)
+	}
 
 	return nil
 }
@@ -107,66 +118,82 @@ func (s *CardStore) RenameDeck(deckObj *deck.Deck, newName string) error {
 		return fmt.Errorf("deck with name %s already exists", newName)
 	}
 
-	// Rename the directory
-	if err := os.Rename(deckObj.Path, newPath); err != nil {
+	// Get references to things we'll need to update
+	parentDeck := deckObj.ParentDeck
+	oldPath := deckObj.Path
+
+	// Get all cards in this deck
+	cardsInDeck := deckObj.GetAllCards()
+
+	// Get all subdecks
+	allSubDecks := deckObj.AllDecks()
+
+	// Rename the directory (filesystem operation outside lock)
+	if err := os.Rename(oldPath, newPath); err != nil {
 		return fmt.Errorf("failed to rename deck directory: %w", err)
 	}
 
-	// Update the deck object
-	oldPath := deckObj.Path
+	// Update the in-memory structures
+
+	// Update our deck map references
+	s.decksMu.Lock()
+	delete(s.Decks, oldPath) // Remove old reference
+
+	// Need to update deck paths since the filesystem paths changed
+	// First update the main deck's path
 	deckObj.Path = newPath
 	deckObj.Name = sanitizedName
-
-	// Update the deck in our map
-	delete(s.Decks, oldPath)
 	s.Decks[newPath] = deckObj
 
-	// Update the parent deck's subdeck map
-	if deckObj.ParentDeck != nil {
-		delete(deckObj.ParentDeck.SubDecks, filepath.Base(oldPath))
-		deckObj.ParentDeck.SubDecks[sanitizedName] = deckObj
+	// Update all subdeck paths
+	for _, subDeck := range allSubDecks {
+		if subDeck == deckObj {
+			continue // Skip the deck itself as we already updated it
+		}
+
+		// Calculate the new subdeck path
+		oldSubPath := subDeck.Path
+		relPath, err := filepath.Rel(oldPath, oldSubPath)
+		if err != nil {
+			s.logger.Error("Error calculating relative path: %v", err)
+			continue
+		}
+
+		newSubPath := filepath.Join(newPath, relPath)
+
+		// Update the subdeck's path in our map
+		delete(s.Decks, oldSubPath)
+		subDeck.Path = newSubPath
+		s.Decks[newSubPath] = subDeck
+	}
+	s.decksMu.Unlock()
+
+	// Update the parent's subdeck reference if it exists
+	if parentDeck != nil {
+		// The parent deck needs to update its SubDecks map to reflect the name change
+		// This is handled by the deck's public methods
+		parentDeck.RemoveSubDeck(filepath.Base(oldPath))
+		parentDeck.AddSubDeck(deckObj)
 	}
 
-	// Update paths for all cards in this deck
-	for _, cardObj := range deckObj.Cards {
+	// Update card filepaths in our maps
+	s.cardsMu.Lock()
+	for _, cardObj := range cardsInDeck {
 		oldCardPath := cardObj.FilePath
-		fileName := filepath.Base(oldCardPath)
-		newCardPath := filepath.Join(newPath, fileName)
+		relPath, err := filepath.Rel(oldPath, oldCardPath)
+		if err != nil {
+			s.logger.Error("Error calculating relative path for card: %v", err)
+			continue
+		}
+
+		newCardPath := filepath.Join(newPath, relPath)
 
 		// Update the card's filepath
-		cardObj.FilePath = newCardPath
-
-		// Update our card map
 		delete(s.Cards, oldCardPath)
+		cardObj.FilePath = newCardPath
 		s.Cards[newCardPath] = cardObj
 	}
-
-	// Recursively update paths for all subdecks and their cards
-	for _, subDeck := range deckObj.SubDecks {
-		// The recursive directory rename is handled by the OS
-		// We just need to update our internal references
-		subDeckOldPath := subDeck.Path
-		subDeckNewPath := filepath.Join(newPath, subDeck.Name)
-		subDeck.Path = subDeckNewPath
-
-		// Update the deck in our map
-		delete(s.Decks, subDeckOldPath)
-		s.Decks[subDeckNewPath] = subDeck
-
-		// Update paths for all cards in this subdeck
-		for _, cardObj := range subDeck.Cards {
-			oldCardPath := cardObj.FilePath
-			fileName := filepath.Base(oldCardPath)
-			newCardPath := filepath.Join(subDeckNewPath, fileName)
-
-			// Update the card's filepath
-			cardObj.FilePath = newCardPath
-
-			// Update our card map
-			delete(s.Cards, oldCardPath)
-			s.Cards[newCardPath] = cardObj
-		}
-	}
+	s.cardsMu.Unlock()
 
 	return nil
 }
@@ -180,7 +207,10 @@ func (s *CardStore) GetDeckByPath(path string) (*deck.Deck, error) {
 
 	// Check if the path is absolute
 	if filepath.IsAbs(path) {
+		s.decksMu.RLock()
 		deckObj, exists := s.Decks[path]
+		s.decksMu.RUnlock()
+
 		if !exists {
 			return nil, fmt.Errorf("deck not found: %s", path)
 		}
@@ -202,7 +232,10 @@ func (s *CardStore) GetDeckByRelativePath(relativePath string) (*deck.Deck, erro
 	absPath := filepath.Join(s.RootDir, relativePath)
 
 	// Look up the deck
+	s.decksMu.RLock()
 	deckObj, exists := s.Decks[absPath]
+	s.decksMu.RUnlock()
+
 	if !exists {
 		return nil, fmt.Errorf("deck not found: %s", relativePath)
 	}
