@@ -14,5 +14,5 @@ func TestUIImports(t *testing.T) {
 	var store storage.CardStore
 
 	// Just to prevent unused variable warnings
-	_ = store
+	_ = &store
 }
