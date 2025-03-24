@@ -232,7 +232,7 @@ Deck
 - Issue 1: File-Based Storage Implementation
 - Issue 3: Basic Card Navigation and Review Interface
 - Issue 6: Search and Filter Functionality
-* Enhanced Features [3/4]
+* Enhanced Features [4/5]
 ** DONE [#B] Issue 13: Convert to Goldmark for Markdown Processing
 :PROPERTIES:
 :EFFORT:   8:00
@@ -376,7 +376,7 @@ Then they should maintain proper indentation and formatting
 - Issue 1: File-Based Storage Implementation
 - Issue 13: Convert to Goldmark for Markdown Processing
 
-** TODO [#B] Issue 5: Card Creation and Editing Interface
+** DONE [#B] Issue 5: Card Creation and Editing Interface
 :PROPERTIES:
 :EFFORT:   16:00
 :END:
