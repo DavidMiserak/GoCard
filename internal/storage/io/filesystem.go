@@ -4,6 +4,7 @@ package io
 
 import (
 	"os"
+	"sync"
 )
 
 // FileSystem defines an interface for filesystem operations
@@ -50,4 +51,26 @@ func (fs *RealFileSystem) Rename(oldpath, newpath string) error {
 
 func (fs *RealFileSystem) Stat(path string) (os.FileInfo, error) {
 	return os.Stat(path)
+}
+
+// Global default filesystem and lock
+var (
+	defaultFS     FileSystem = NewRealFileSystem()
+	defaultFSLock sync.RWMutex
+)
+
+// GetDefaultFS returns the current default filesystem
+func GetDefaultFS() FileSystem {
+	defaultFSLock.RLock()
+	defer defaultFSLock.RUnlock()
+	return defaultFS
+}
+
+// SetDefaultFS sets the default filesystem
+func SetDefaultFS(fs FileSystem) FileSystem {
+	defaultFSLock.Lock()
+	oldFS := defaultFS
+	defaultFS = fs
+	defaultFSLock.Unlock()
+	return oldFS
 }
