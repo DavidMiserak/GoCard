@@ -1,6 +1,5 @@
 // File: internal/storage/io/file_ops.go
 
-// Package io provides file system operations for the GoCard storage system.
 package io
 
 import (
@@ -11,8 +10,14 @@ import (
 
 // EnsureDirectoryExists creates a directory if it doesn't exist
 func EnsureDirectoryExists(dirPath string) error {
-	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-		if err := os.MkdirAll(dirPath, 0755); err != nil {
+	return EnsureDirectoryExistsWithFS(GetDefaultFS(), dirPath)
+}
+
+// EnsureDirectoryExistsWithFS creates a directory if it doesn't exist using the provided filesystem
+func EnsureDirectoryExistsWithFS(fs FileSystem, dirPath string) error {
+	_, err := fs.Stat(dirPath)
+	if os.IsNotExist(err) {
+		if err := fs.MkdirAll(dirPath, 0755); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dirPath, err)
 		}
 	}
@@ -30,7 +35,12 @@ func GetAbsolutePath(path string) (string, error) {
 
 // FileExists checks if a file exists at the given path
 func FileExists(path string) bool {
-	info, err := os.Stat(path)
+	return FileExistsWithFS(GetDefaultFS(), path)
+}
+
+// FileExistsWithFS checks if a file exists at the given path using the provided filesystem
+func FileExistsWithFS(fs FileSystem, path string) bool {
+	info, err := fs.Stat(path)
 	if os.IsNotExist(err) {
 		return false
 	}
@@ -38,9 +48,13 @@ func FileExists(path string) bool {
 }
 
 // DirectoryExists checks if a directory exists at the given path
-// Returns a boolean indicating existence and any error encountered
 func DirectoryExists(path string) (bool, error) {
-	info, err := os.Stat(path)
+	return DirectoryExistsWithFS(GetDefaultFS(), path)
+}
+
+// DirectoryExistsWithFS checks if a directory exists using the provided filesystem
+func DirectoryExistsWithFS(fs FileSystem, path string) (bool, error) {
+	info, err := fs.Stat(path)
 	if os.IsNotExist(err) {
 		return false, nil
 	}
@@ -52,7 +66,12 @@ func DirectoryExists(path string) (bool, error) {
 
 // ReadFileContent reads the content of a file at the given path
 func ReadFileContent(path string) ([]byte, error) {
-	content, err := os.ReadFile(path)
+	return ReadFileContentWithFS(GetDefaultFS(), path)
+}
+
+// ReadFileContentWithFS reads the content of a file using the provided filesystem
+func ReadFileContentWithFS(fs FileSystem, path string) ([]byte, error) {
+	content, err := fs.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", path, err)
 	}
@@ -61,12 +80,17 @@ func ReadFileContent(path string) ([]byte, error) {
 
 // WriteFileContent writes content to a file at the given path
 func WriteFileContent(path string, content []byte) error {
+	return WriteFileContentWithFS(GetDefaultFS(), path, content)
+}
+
+// WriteFileContentWithFS writes content to a file using the provided filesystem
+func WriteFileContentWithFS(fs FileSystem, path string, content []byte) error {
 	dir := filepath.Dir(path)
-	if err := EnsureDirectoryExists(dir); err != nil {
+	if err := EnsureDirectoryExistsWithFS(fs, dir); err != nil {
 		return err
 	}
 
-	if err := os.WriteFile(path, content, 0644); err != nil {
+	if err := fs.WriteFile(path, content, 0644); err != nil {
 		return fmt.Errorf("failed to write to file %s: %w", path, err)
 	}
 	return nil
@@ -74,7 +98,12 @@ func WriteFileContent(path string, content []byte) error {
 
 // DeleteFile deletes a file at the given path
 func DeleteFile(path string) error {
-	if err := os.Remove(path); err != nil {
+	return DeleteFileWithFS(GetDefaultFS(), path)
+}
+
+// DeleteFileWithFS deletes a file using the provided filesystem
+func DeleteFileWithFS(fs FileSystem, path string) error {
+	if err := fs.Remove(path); err != nil {
 		return fmt.Errorf("failed to delete file %s: %w", path, err)
 	}
 	return nil
@@ -82,14 +111,19 @@ func DeleteFile(path string) error {
 
 // MoveFile moves a file from sourcePath to targetPath
 func MoveFile(sourcePath, targetPath string) error {
+	return MoveFileWithFS(GetDefaultFS(), sourcePath, targetPath)
+}
+
+// MoveFileWithFS moves a file using the provided filesystem
+func MoveFileWithFS(fs FileSystem, sourcePath, targetPath string) error {
 	// Ensure target directory exists
 	targetDir := filepath.Dir(targetPath)
-	if err := EnsureDirectoryExists(targetDir); err != nil {
+	if err := EnsureDirectoryExistsWithFS(fs, targetDir); err != nil {
 		return err
 	}
 
 	// Move the file
-	if err := os.Rename(sourcePath, targetPath); err != nil {
+	if err := fs.Rename(sourcePath, targetPath); err != nil {
 		return fmt.Errorf("failed to move file from %s to %s: %w", sourcePath, targetPath, err)
 	}
 	return nil
@@ -97,14 +131,19 @@ func MoveFile(sourcePath, targetPath string) error {
 
 // RenameDirectory renames a directory
 func RenameDirectory(oldPath, newPath string) error {
+	return RenameDirectoryWithFS(GetDefaultFS(), oldPath, newPath)
+}
+
+// RenameDirectoryWithFS renames a directory using the provided filesystem
+func RenameDirectoryWithFS(fs FileSystem, oldPath, newPath string) error {
 	// Ensure parent directory of new path exists
 	newParentDir := filepath.Dir(newPath)
-	if err := EnsureDirectoryExists(newParentDir); err != nil {
+	if err := EnsureDirectoryExistsWithFS(fs, newParentDir); err != nil {
 		return err
 	}
 
 	// Rename the directory
-	if err := os.Rename(oldPath, newPath); err != nil {
+	if err := fs.Rename(oldPath, newPath); err != nil {
 		return fmt.Errorf("failed to rename directory from %s to %s: %w", oldPath, newPath, err)
 	}
 	return nil
@@ -112,7 +151,12 @@ func RenameDirectory(oldPath, newPath string) error {
 
 // DeleteDirectory removes a directory and all its contents
 func DeleteDirectory(path string) error {
-	if err := os.RemoveAll(path); err != nil {
+	return DeleteDirectoryWithFS(GetDefaultFS(), path)
+}
+
+// DeleteDirectoryWithFS removes a directory and all its contents using the provided filesystem
+func DeleteDirectoryWithFS(fs FileSystem, path string) error {
+	if err := fs.RemoveAll(path); err != nil {
 		return fmt.Errorf("failed to delete directory %s: %w", path, err)
 	}
 	return nil

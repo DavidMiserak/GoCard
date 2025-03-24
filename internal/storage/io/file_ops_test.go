@@ -3,293 +3,465 @@
 package io
 
 import (
-	"os"
-	"path/filepath"
+	"errors"
 	"testing"
-
-	testhelp "github.com/DavidMiserak/GoCard/internal/testing"
 )
 
-func TestEnsureDirectoryExists(t *testing.T) {
-	// Create a temporary testing directory
-	tempDir := testhelp.TempDir(t)
+func TestEnsureDirectoryExistsWithMockFS(t *testing.T) {
+	helper := NewTestHelper(t)
 
 	// Test creating a new directory
-	testDir := filepath.Join(tempDir, "test-dir")
-	err := EnsureDirectoryExists(testDir)
-	if err != nil {
-		t.Errorf("Failed to create directory: %v", err)
-	}
+	helper.UseWithinTest(func() {
+		// Test creating a directory that doesn't exist
+		err := EnsureDirectoryExists("/test-dir")
+		if err != nil {
+			t.Errorf("Failed to create directory: %v", err)
+		}
+		helper.AssertDirExists("/test-dir")
 
-	testhelp.AssertFileExists(t, testDir)
+		// Test with existing directory (should not error)
+		err = EnsureDirectoryExists("/test-dir")
+		if err != nil {
+			t.Errorf("Failed on existing directory: %v", err)
+		}
 
-	// Test with existing directory (should not error)
-	err = EnsureDirectoryExists(testDir)
-	if err != nil {
-		t.Errorf("Failed on existing directory: %v", err)
-	}
+		// Test nested directories
+		err = EnsureDirectoryExists("/test-dir/nested1/nested2")
+		if err != nil {
+			t.Errorf("Failed to create nested directories: %v", err)
+		}
+		helper.AssertDirExists("/test-dir/nested1/nested2")
 
-	// Test nested directories
-	nestedDir := filepath.Join(testDir, "nested1", "nested2")
-	err = EnsureDirectoryExists(nestedDir)
-	if err != nil {
-		t.Errorf("Failed to create nested directories: %v", err)
-	}
+		// Test error injection
+		expectedErr := errors.New("permission denied")
+		helper.InjectError("mkdir", "/error-dir", expectedErr)
 
-	testhelp.AssertFileExists(t, nestedDir)
+		err = EnsureDirectoryExists("/error-dir")
+		if err == nil {
+			t.Errorf("Expected error but got none")
+		}
+	})
 }
 
-func TestGetAbsolutePath(t *testing.T) {
-	// Test relative path
-	relPath := "test/path"
-	absPath, err := GetAbsolutePath(relPath)
-	if err != nil {
-		t.Errorf("Failed to get absolute path: %v", err)
-	}
+func TestFileExistsWithMockFS(t *testing.T) {
+	helper := NewTestHelper(t)
 
-	// The absolute path should contain the relative path
-	if filepath.Base(absPath) != filepath.Base(relPath) {
-		t.Errorf("Base of absolute path %s doesn't match base of relative path %s",
-			absPath, relPath)
-	}
+	// Setup test files
+	helper.SetupDir("/test-dir")
+	helper.SetupFile("/test-dir/test.txt", "content")
 
-	// Test already absolute path
-	currentDir, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Failed to get working directory: %v", err)
-	}
+	helper.UseWithinTest(func() {
+		// Test existing file
+		if !FileExists("/test-dir/test.txt") {
+			t.Errorf("FileExists failed to detect existing file")
+		}
 
-	absResult, err := GetAbsolutePath(currentDir)
-	if err != nil {
-		t.Errorf("Failed on absolute path: %v", err)
-	}
+		// Test non-existent file
+		if FileExists("/test-dir/non-existent.txt") {
+			t.Errorf("FileExists incorrectly detected non-existent file")
+		}
 
-	if absResult != currentDir {
-		t.Errorf("Expected %s, got %s", currentDir, absResult)
-	}
+		// Test directory (should return false as it's not a file)
+		if FileExists("/test-dir") {
+			t.Errorf("FileExists incorrectly identified directory as file")
+		}
+	})
 }
 
-func TestFileExists(t *testing.T) {
-	tempDir := testhelp.TempDir(t)
+func TestDirectoryExistsWithMockFS(t *testing.T) {
+	helper := NewTestHelper(t)
 
-	// Create a test file
-	testFile := testhelp.WriteTestFile(t, tempDir, "test.txt", "content")
+	// Setup test directory
+	helper.SetupDir("/test-dir")
+	helper.SetupFile("/test-dir/test.txt", "content")
 
-	// Test existing file
-	if !FileExists(testFile) {
-		t.Errorf("FileExists failed to detect existing file")
-	}
+	helper.UseWithinTest(func() {
+		// Test existing directory
+		exists, err := DirectoryExists("/test-dir")
+		if err != nil {
+			t.Errorf("DirectoryExists error: %v", err)
+		}
+		if !exists {
+			t.Errorf("DirectoryExists failed to detect existing directory")
+		}
 
-	// Test non-existent file
-	nonExistentFile := filepath.Join(tempDir, "non-existent.txt")
-	if FileExists(nonExistentFile) {
-		t.Errorf("FileExists incorrectly detected non-existent file")
-	}
+		// Test non-existent directory
+		exists, err = DirectoryExists("/non-existent-dir")
+		if err != nil {
+			t.Errorf("DirectoryExists error on non-existent dir: %v", err)
+		}
+		if exists {
+			t.Errorf("DirectoryExists incorrectly detected non-existent directory")
+		}
 
-	// Test directory (should return false as it's not a file)
-	if FileExists(tempDir) {
-		t.Errorf("FileExists incorrectly identified directory as file")
-	}
+		// Test file (should return false as it's not a directory)
+		exists, err = DirectoryExists("/test-dir/test.txt")
+		if err != nil {
+			t.Errorf("DirectoryExists error on file: %v", err)
+		}
+		if exists {
+			t.Errorf("DirectoryExists incorrectly identified file as directory")
+		}
+
+		// Test error injection
+		expectedErr := errors.New("permission denied")
+		helper.InjectError("stat", "/error-dir", expectedErr)
+
+		_, err = DirectoryExists("/error-dir")
+		if err == nil {
+			t.Errorf("Expected error but got none")
+		}
+	})
 }
 
-func TestDirectoryExists(t *testing.T) {
-	tempDir := testhelp.TempDir(t)
-
-	// Test existing directory
-	exists, err := DirectoryExists(tempDir)
-	if err != nil {
-		t.Errorf("DirectoryExists error: %v", err)
-	}
-	if !exists {
-		t.Errorf("DirectoryExists failed to detect existing directory")
-	}
-
-	// Test non-existent directory
-	nonExistentDir := filepath.Join(tempDir, "non-existent-dir")
-	exists, err = DirectoryExists(nonExistentDir)
-	if err != nil {
-		t.Errorf("DirectoryExists error on non-existent dir: %v", err)
-	}
-	if exists {
-		t.Errorf("DirectoryExists incorrectly detected non-existent directory")
-	}
-
-	// Test file (should return false as it's not a directory)
-	testFile := testhelp.WriteTestFile(t, tempDir, "test.txt", "content")
-	exists, err = DirectoryExists(testFile)
-	if err != nil {
-		t.Errorf("DirectoryExists error on file: %v", err)
-	}
-	if exists {
-		t.Errorf("DirectoryExists incorrectly identified file as directory")
-	}
-}
-
-func TestReadFileContent(t *testing.T) {
-	tempDir := testhelp.TempDir(t)
+func TestReadFileContentWithMockFS(t *testing.T) {
+	helper := NewTestHelper(t)
 
 	// Create a test file
 	content := "Hello, World!"
-	testFile := testhelp.WriteTestFile(t, tempDir, "test.txt", content)
+	helper.SetupFile("/test-dir/test.txt", content)
 
-	// Read the file
-	readContent, err := ReadFileContent(testFile)
-	if err != nil {
-		t.Errorf("ReadFileContent error: %v", err)
-	}
+	helper.UseWithinTest(func() {
+		// Read the file
+		readContent, err := ReadFileContent("/test-dir/test.txt")
+		if err != nil {
+			t.Errorf("ReadFileContent error: %v", err)
+		}
 
-	if string(readContent) != content {
-		t.Errorf("Expected content %q, got %q", content, string(readContent))
-	}
+		if string(readContent) != content {
+			t.Errorf("Expected content %q, got %q", content, string(readContent))
+		}
 
-	// Test non-existent file
-	nonExistentFile := filepath.Join(tempDir, "non-existent.txt")
-	_, err = ReadFileContent(nonExistentFile)
-	if err == nil {
-		t.Errorf("Expected error reading non-existent file, got nil")
-	}
+		// Test non-existent file
+		_, err = ReadFileContent("/test-dir/non-existent.txt")
+		if err == nil {
+			t.Errorf("Expected error reading non-existent file, got nil")
+		}
+
+		// Test error injection
+		expectedErr := errors.New("permission denied")
+		helper.InjectError("read", "/test-dir/test.txt", expectedErr)
+
+		_, err = ReadFileContent("/test-dir/test.txt")
+		if err == nil {
+			t.Errorf("Expected injected error but got none")
+		}
+	})
 }
 
-func TestWriteFileContent(t *testing.T) {
-	tempDir := testhelp.TempDir(t)
+func TestWriteFileContentWithMockFS(t *testing.T) {
+	helper := NewTestHelper(t)
 
-	// Write to a new file
-	content := "Hello, World!"
-	newFile := filepath.Join(tempDir, "new.txt")
+	// Setup test directory
+	helper.SetupDir("/test-dir")
 
-	err := WriteFileContent(newFile, []byte(content))
-	if err != nil {
-		t.Errorf("WriteFileContent error: %v", err)
-	}
+	helper.UseWithinTest(func() {
+		// Write to a new file
+		content := "Hello, World!"
+		err := WriteFileContent("/test-dir/new.txt", []byte(content))
+		if err != nil {
+			t.Errorf("WriteFileContent error: %v", err)
+		}
 
-	testhelp.AssertFileExists(t, newFile)
-	testhelp.AssertFileContent(t, newFile, content)
+		helper.AssertFileExists("/test-dir/new.txt")
+		helper.AssertFileContent("/test-dir/new.txt", content)
 
-	// Write to an existing file (should overwrite)
-	newContent := "New content"
-	err = WriteFileContent(newFile, []byte(newContent))
-	if err != nil {
-		t.Errorf("WriteFileContent error on existing file: %v", err)
-	}
+		// Write to an existing file (should overwrite)
+		newContent := "New content"
+		err = WriteFileContent("/test-dir/new.txt", []byte(newContent))
+		if err != nil {
+			t.Errorf("WriteFileContent error on existing file: %v", err)
+		}
 
-	testhelp.AssertFileContent(t, newFile, newContent)
+		helper.AssertFileContent("/test-dir/new.txt", newContent)
 
-	// Write to a file in a non-existent directory (should create the directory)
-	nestedFile := filepath.Join(tempDir, "nested", "deep.txt")
-	err = WriteFileContent(nestedFile, []byte(content))
-	if err != nil {
-		t.Errorf("WriteFileContent error with nested directories: %v", err)
-	}
+		// Write to a file in a non-existent directory (should create the directory)
+		nestedContent := "Nested content"
+		err = WriteFileContent("/test-dir/nested/deep.txt", []byte(nestedContent))
+		if err != nil {
+			t.Errorf("WriteFileContent error with nested directories: %v", err)
+		}
 
-	testhelp.AssertFileExists(t, nestedFile)
-	testhelp.AssertFileContent(t, nestedFile, content)
+		helper.AssertFileExists("/test-dir/nested/deep.txt")
+		helper.AssertFileContent("/test-dir/nested/deep.txt", nestedContent)
+
+		// Test error injection
+		expectedErr := errors.New("disk full")
+		helper.InjectError("write", "/test-dir/error.txt", expectedErr)
+
+		err = WriteFileContent("/test-dir/error.txt", []byte("error content"))
+		if err == nil {
+			t.Errorf("Expected injected error but got none")
+		}
+	})
 }
 
-func TestDeleteFile(t *testing.T) {
-	tempDir := testhelp.TempDir(t)
+func TestDeleteFileWithMockFS(t *testing.T) {
+	helper := NewTestHelper(t)
 
 	// Create a test file
-	testFile := testhelp.WriteTestFile(t, tempDir, "test.txt", "content")
+	helper.SetupFile("/test-dir/test.txt", "content")
 
-	// Delete the file
-	err := DeleteFile(testFile)
-	if err != nil {
-		t.Errorf("DeleteFile error: %v", err)
-	}
+	helper.UseWithinTest(func() {
+		// Delete the file
+		err := DeleteFile("/test-dir/test.txt")
+		if err != nil {
+			t.Errorf("DeleteFile error: %v", err)
+		}
 
-	testhelp.AssertFileDoesNotExist(t, testFile)
+		helper.AssertFileDoesNotExist("/test-dir/test.txt")
 
-	// Test deleting a non-existent file
-	err = DeleteFile(testFile) // File was already deleted
-	if err == nil {
-		t.Errorf("Expected error deleting non-existent file, got nil")
-	}
+		// Test deleting a non-existent file
+		err = DeleteFile("/test-dir/non-existent.txt")
+		if err == nil {
+			t.Errorf("Expected error deleting non-existent file, got nil")
+		}
+
+		// Test error injection
+		helper.SetupFile("/test-dir/error.txt", "content")
+		expectedErr := errors.New("permission denied")
+		helper.InjectError("remove", "/test-dir/error.txt", expectedErr)
+
+		err = DeleteFile("/test-dir/error.txt")
+		if err == nil {
+			t.Errorf("Expected injected error but got none")
+		}
+	})
 }
 
-func TestMoveFile(t *testing.T) {
-	tempDir := testhelp.TempDir(t)
+func TestMoveFileWithMockFS(t *testing.T) {
+	helper := NewTestHelper(t)
 
 	// Create a test file
 	content := "Test content"
-	sourceFile := testhelp.WriteTestFile(t, tempDir, "source.txt", content)
+	helper.SetupFile("/test-dir/source.txt", content)
 
-	// Move to a new location
-	targetFile := filepath.Join(tempDir, "target.txt")
-	err := MoveFile(sourceFile, targetFile)
-	if err != nil {
-		t.Errorf("MoveFile error: %v", err)
-	}
+	helper.UseWithinTest(func() {
+		// Move to a new location
+		err := MoveFile("/test-dir/source.txt", "/test-dir/target.txt")
+		if err != nil {
+			t.Errorf("MoveFile error: %v", err)
+		}
 
-	testhelp.AssertFileDoesNotExist(t, sourceFile)
-	testhelp.AssertFileExists(t, targetFile)
-	testhelp.AssertFileContent(t, targetFile, content)
+		helper.AssertFileDoesNotExist("/test-dir/source.txt")
+		helper.AssertFileExists("/test-dir/target.txt")
+		helper.AssertFileContent("/test-dir/target.txt", content)
 
-	// Move to a nested directory that doesn't exist yet
-	nestedTarget := filepath.Join(tempDir, "nested", "moved.txt")
-	err = MoveFile(targetFile, nestedTarget)
-	if err != nil {
-		t.Errorf("MoveFile error to nested directory: %v", err)
-	}
+		// Move to a nested directory that doesn't exist yet
+		err = MoveFile("/test-dir/target.txt", "/test-dir/nested/moved.txt")
+		if err != nil {
+			t.Errorf("MoveFile error to nested directory: %v", err)
+		}
 
-	testhelp.AssertFileDoesNotExist(t, targetFile)
-	testhelp.AssertFileExists(t, nestedTarget)
-	testhelp.AssertFileContent(t, nestedTarget, content)
+		helper.AssertFileDoesNotExist("/test-dir/target.txt")
+		helper.AssertFileExists("/test-dir/nested/moved.txt")
+		helper.AssertFileContent("/test-dir/nested/moved.txt", content)
+
+		// Test error handling - source doesn't exist
+		err = MoveFile("/test-dir/non-existent.txt", "/test-dir/error.txt")
+		if err == nil {
+			t.Errorf("Expected error moving non-existent file, got nil")
+		}
+
+		// Test error injection
+		helper.SetupFile("/test-dir/error-source.txt", "error content")
+		expectedErr := errors.New("permission denied")
+		helper.InjectError("rename", "/test-dir/error-source.txt", expectedErr)
+
+		err = MoveFile("/test-dir/error-source.txt", "/test-dir/error-target.txt")
+		if err == nil {
+			t.Errorf("Expected injected error but got none")
+		}
+	})
 }
 
-func TestRenameDirectory(t *testing.T) {
-	tempDir := testhelp.TempDir(t)
+func TestRenameDirectoryWithMockFS(t *testing.T) {
+	helper := NewTestHelper(t)
 
-	// Create a test directory with a file
-	testDirs := testhelp.CreateTestSubdirs(t, tempDir, "source-dir")
-	sourceDir := testDirs["source-dir"]
-	testhelp.WriteTestFile(t, sourceDir, "test.txt", "content")
+	// Create a test directory structure
+	helper.SetupDir("/source-dir")
+	helper.SetupDir("/source-dir/subdir")
+	helper.SetupFile("/source-dir/test.txt", "content")
+	helper.SetupFile("/source-dir/subdir/nested.txt", "nested content")
 
-	// Rename the directory
-	targetDir := filepath.Join(tempDir, "target-dir")
-	err := RenameDirectory(sourceDir, targetDir)
-	if err != nil {
-		t.Errorf("RenameDirectory error: %v", err)
-	}
+	helper.UseWithinTest(func() {
+		// Rename the directory
+		err := RenameDirectory("/source-dir", "/target-dir")
+		if err != nil {
+			t.Errorf("RenameDirectory error: %v", err)
+		}
 
-	testhelp.AssertFileDoesNotExist(t, sourceDir)
-	testhelp.AssertFileExists(t, targetDir)
+		helper.AssertFileDoesNotExist("/source-dir")
+		helper.AssertDirExists("/target-dir")
+		helper.AssertDirExists("/target-dir/subdir")
+		helper.AssertFileExists("/target-dir/test.txt")
+		helper.AssertFileExists("/target-dir/subdir/nested.txt")
+		helper.AssertFileContent("/target-dir/test.txt", "content")
+		helper.AssertFileContent("/target-dir/subdir/nested.txt", "nested content")
 
-	// Check that the file was moved too
-	targetFile := filepath.Join(targetDir, "test.txt")
-	testhelp.AssertFileExists(t, targetFile)
+		// Test renaming to a nested directory that doesn't exist
+		err = RenameDirectory("/target-dir", "/new-parent/renamed-dir")
+		if err != nil {
+			t.Errorf("RenameDirectory error to nested directory: %v", err)
+		}
 
-	// Test renaming to a nested directory that doesn't exist
-	nestedTargetDir := filepath.Join(tempDir, "nested", "renamed-dir")
-	err = RenameDirectory(targetDir, nestedTargetDir)
-	if err != nil {
-		t.Errorf("RenameDirectory error to nested directory: %v", err)
-	}
+		helper.AssertFileDoesNotExist("/target-dir")
+		helper.AssertDirExists("/new-parent/renamed-dir")
+		helper.AssertFileExists("/new-parent/renamed-dir/test.txt")
 
-	testhelp.AssertFileDoesNotExist(t, targetDir)
-	testhelp.AssertFileExists(t, nestedTargetDir)
+		// Test error injection
+		helper.SetupDir("/error-dir")
+		expectedErr := errors.New("permission denied")
+		helper.InjectError("rename", "/error-dir", expectedErr)
+
+		err = RenameDirectory("/error-dir", "/error-target")
+		if err == nil {
+			t.Errorf("Expected injected error but got none")
+		}
+	})
 }
 
-func TestDeleteDirectory(t *testing.T) {
-	tempDir := testhelp.TempDir(t)
+func TestDeleteDirectoryWithMockFS(t *testing.T) {
+	helper := NewTestHelper(t)
 
 	// Create a test directory with files and subdirectories
-	testDirs := testhelp.CreateTestSubdirs(t, tempDir, "test-dir", "test-dir/subdir")
-	testDir := testDirs["test-dir"]
+	helper.SetupDir("/test-dir")
+	helper.SetupDir("/test-dir/subdir")
+	helper.SetupFile("/test-dir/file1.txt", "content1")
+	helper.SetupFile("/test-dir/subdir/file2.txt", "content2")
 
-	testhelp.WriteTestFile(t, testDir, "file1.txt", "content1")
-	testhelp.WriteTestFile(t, testDirs["test-dir/subdir"], "file2.txt", "content2")
+	helper.UseWithinTest(func() {
+		// Delete the directory
+		err := DeleteDirectory("/test-dir")
+		if err != nil {
+			t.Errorf("DeleteDirectory error: %v", err)
+		}
 
-	// Delete the directory
-	err := DeleteDirectory(testDir)
-	if err != nil {
-		t.Errorf("DeleteDirectory error: %v", err)
+		helper.AssertFileDoesNotExist("/test-dir")
+		helper.AssertFileDoesNotExist("/test-dir/file1.txt")
+		helper.AssertFileDoesNotExist("/test-dir/subdir/file2.txt")
+
+		// Test deleting a non-existent directory
+		err = DeleteDirectory("/non-existent-dir")
+		if err != nil {
+			t.Errorf("Expected no error when deleting non-existent directory, got: %v", err)
+		}
+
+		// Test error injection
+		helper.SetupDir("/error-dir")
+		expectedErr := errors.New("permission denied")
+		helper.InjectError("remove", "/error-dir", expectedErr)
+
+		err = DeleteDirectory("/error-dir")
+		if err == nil {
+			t.Errorf("Expected injected error but got none")
+		}
+	})
+}
+
+// TestFileSystemSwapping tests proper swapping of the default filesystem
+func TestFileSystemSwapping(t *testing.T) {
+	helper := NewTestHelper(t)
+
+	// Set up mock filesystem
+	helper.SetupFile("/test.txt", "test content")
+
+	// Verify global functions use the real filesystem by default
+	beforeSwap := FileExists("/test.txt")
+	if beforeSwap {
+		t.Errorf("File shouldn't exist in real filesystem before swap")
 	}
 
-	testhelp.AssertFileDoesNotExist(t, testDir)
+	// Use helper to swap filesystems
+	helper.UseWithinTest(func() {
+		// Verify the mock is now used
+		duringSwap := FileExists("/test.txt")
+		if !duringSwap {
+			t.Errorf("File should exist in mock filesystem during swap")
+		}
 
-	// Test deleting a non-existent directory
-	err = DeleteDirectory(testDir) // Directory was already deleted
-	if err != nil {
-		t.Errorf("Expected no error when deleting non-existent directory, got: %v", err)
+		// Check file content
+		content, err := ReadFileContent("/test.txt")
+		if err != nil {
+			t.Errorf("ReadFileContent error: %v", err)
+		}
+		if string(content) != "test content" {
+			t.Errorf("Expected 'test content', got '%s'", string(content))
+		}
+	})
+
+	// Verify we're back to the real filesystem
+	afterSwap := FileExists("/test.txt")
+	if afterSwap {
+		t.Errorf("File shouldn't exist in real filesystem after swap")
 	}
+}
+
+// Integration test demonstrating how all operations work together
+func TestIntegratedOperationsWithMockFS(t *testing.T) {
+	helper := NewTestHelper(t)
+
+	helper.UseWithinTest(func() {
+		// 1. Create directories
+		err := EnsureDirectoryExists("/project/src")
+		if err != nil {
+			t.Fatalf("Failed to create directory: %v", err)
+		}
+
+		// 2. Write files
+		err = WriteFileContent("/project/src/main.go", []byte("package main\n\nfunc main() {}"))
+		if err != nil {
+			t.Fatalf("Failed to write file: %v", err)
+		}
+
+		err = WriteFileContent("/project/README.md", []byte("# Project"))
+		if err != nil {
+			t.Fatalf("Failed to write file: %v", err)
+		}
+
+		// 3. Verify files exist
+		if !FileExists("/project/src/main.go") {
+			t.Errorf("File should exist")
+		}
+
+		dirExists, err := DirectoryExists("/project/src")
+		if err != nil || !dirExists {
+			t.Errorf("Directory should exist")
+		}
+
+		// 4. Move a file
+		err = MoveFile("/project/README.md", "/project/docs/README.md")
+		if err != nil {
+			t.Fatalf("Failed to move file: %v", err)
+		}
+
+		helper.AssertFileExists("/project/docs/README.md")
+		helper.AssertFileDoesNotExist("/project/README.md")
+
+		// 5. Rename a directory
+		err = RenameDirectory("/project/src", "/project/code")
+		if err != nil {
+			t.Fatalf("Failed to rename directory: %v", err)
+		}
+
+		helper.AssertDirExists("/project/code")
+		helper.AssertFileDoesNotExist("/project/src")
+		helper.AssertFileExists("/project/code/main.go")
+
+		// 6. Delete a file
+		err = DeleteFile("/project/code/main.go")
+		if err != nil {
+			t.Fatalf("Failed to delete file: %v", err)
+		}
+
+		helper.AssertFileDoesNotExist("/project/code/main.go")
+
+		// 7. Delete a directory
+		err = DeleteDirectory("/project")
+		if err != nil {
+			t.Fatalf("Failed to delete directory: %v", err)
+		}
+
+		helper.AssertFileDoesNotExist("/project")
+	})
 }
