@@ -53,17 +53,20 @@ Unsure where to begin contributing? You can start by looking through these `good
 ### Setup Steps
 
 1. Clone the repository
+
 ```bash
 git clone https://github.com/DavidMiserak/GoCard.git
 cd GoCard
 ```
 
 2. Install dependencies
+
 ```bash
 go mod download
 ```
 
 3. Install pre-commit hooks (recommended)
+
 ```bash
 make pre-commit-setup
 ```
@@ -84,12 +87,14 @@ make lint
 ## Coding Conventions
 
 ### Go Formatting
+
 - Use `gofmt` for formatting
 - Follow Go best practices and idioms
 - Keep functions small and focused
 - Add comments to explain complex logic
 
 ### Commit Messages
+
 We use [Conventional Commits](https://www.conventionalcommits.org/) format:
 
 - `feat:` A new feature
@@ -101,7 +106,8 @@ We use [Conventional Commits](https://www.conventionalcommits.org/) format:
 - `chore:` Maintenance tasks
 
 Example:
-```
+
+```markdown
 feat: add import/export functionality for cards
 
 - Implement Anki package (.apkg) import
@@ -110,6 +116,7 @@ feat: add import/export functionality for cards
 ```
 
 ### Git Workflow
+
 1. Create a feature branch: `git checkout -b feat/new-feature`
 2. Make your changes
 3. Run tests and linters

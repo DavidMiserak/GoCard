@@ -1,27 +1,34 @@
-# GoCard v0.1.0 Release Notes
+# GoCard v0.2.0 Release Notes
 
-We're excited to announce the first release of GoCard, a lightweight, file-based spaced repetition system built in Go. This initial release provides the core functionality while establishing a solid foundation for future development.
+We're excited to announce GoCard v0.2.0, building on our initial release with significant improvements to the core functionality and user experience.
 
-## Features
+## What's New
 
-### Core Functionality
+### Enhanced Markdown Support
 
-- **File-Based Storage**: All flashcards are stored as Markdown files in regular directories, making them Git-friendly and easy to edit with your favorite text editor
-- **Spaced Repetition**: Implementation of the SM-2 algorithm (similar to Anki) for efficient learning
-- **Directory-Based Deck Organization**: Directories represent decks, giving you a natural way to organize your knowledge
-- **Real-Time File Watching**: Changes to card files are automatically detected and loaded
+- **Goldmark Integration**: Completely reworked markdown processing using Goldmark for more reliable and feature-rich rendering
+- **Syntax Highlighting**: Support for over 50 programming languages with customizable themes
+- **Rich Content**: Better rendering of tables, lists, and code blocks
 
-### User Interface
+### Improved User Interface
 
-- **Terminal Interface**: Clean, distraction-free TUI for focused learning
-- **Markdown Rendering**: Beautiful rendering of card content with syntax highlighting
-- **Keyboard-Driven**: Efficient workflow with intuitive keyboard shortcuts including vim/emacs-style navigation
-- **Getting Started Experience**: Tutorial and example cards for first-time users
+- **Card Editor**: Full-featured card creation and editing interface with markdown preview
+- **Auto-Save**: Automatic saving of changes to prevent data loss
+- **Tutorial Mode**: Interactive tutorial for first-time users
+- **Enhanced Navigation**: Vim and Emacs-style keyboard shortcuts for efficient navigation
+- **Deck Browser**: Improved deck browsing with statistics and breadcrumb navigation
 
-### Developer Features
+### File System Integration
 
-- **Markdown Support**: Full Markdown rendering with code syntax highlighting
-- **Cross-Platform**: Works on Linux, macOS, and Windows
+- **Real-time Watching**: Robust file system monitoring with fsnotify for seamless external editing
+- **Directory Organization**: Enhanced deck management through directory structure
+- **File Operations**: Better handling of file moves, renames, and deletions
+
+### Learning Features
+
+- **Enhanced SM-2 Algorithm**: Improved spaced repetition scheduling
+- **Review Sessions**: Comprehensive review session interface with statistics
+- **Learning Insights**: Better tracking of your learning progress
 
 ## Installation
 
@@ -43,23 +50,13 @@ go build -o GoCard ./cmd/gocard
 go install github.com/DavidMiserak/GoCard/cmd/gocard@latest
 ```
 
-## Getting Started
+## Upgrading from v0.1.0
 
-1. Launch GoCard:
-
-```bash
-GoCard
-```
-
-2. By default, GoCard will create a directory at `~/GoCard` to store your cards.
-
-3. Follow the tutorial that appears on first run to learn the basics.
-
-4. Start creating and reviewing your own cards!
+This release is fully compatible with card files created in v0.1.0. No migration steps are needed - simply install the new version and run it with your existing card directory.
 
 ## Feedback and Contributions
 
-This is an early release, and we welcome your feedback and contributions. Please file issues for bugs or feature requests on our GitHub repository.
+We welcome your feedback and contributions! Please file issues for bugs or feature requests on our GitHub repository.
 
 ## Coming Soon
 
@@ -71,4 +68,4 @@ We're actively working on more features:
 - Code testing integration
 - Additional configuration options
 
-Thank you for trying GoCard!
+Thank you for using GoCard!

@@ -2,7 +2,7 @@
 # scripts/create_release.sh - Helper script for creating a new GoCard release
 
 # Configuration
-VERSION="0.1.0"
+VERSION="0.2.0"
 TAG_NAME="v$VERSION"
 BRANCH_NAME="release/$VERSION"
 
@@ -25,8 +25,7 @@ git checkout -b "$BRANCH_NAME"
 
 # Update version in files
 echo -e "${GREEN}Updating version to $VERSION in files...${NC}"
-sed -i 's/Version: 0.0.0/Version: '"$VERSION"'/' Makefile
-sed -i 's/Version   = "0.0.0"/Version   = "'"$VERSION"'"/' cmd/gocard/flags.go
+sed -i 's/Version = "0.1.0"/Version = "'"$VERSION"'"/' cmd/gocard/flags.go
 
 # Confirm CHANGELOG.md exists
 if [ ! -f CHANGELOG.md ]; then
@@ -40,9 +39,21 @@ if [ ! -f CHANGELOG.md ]; then
     fi
 fi
 
+# Check for RELEASE_NOTES.md
+if [ ! -f RELEASE_NOTES.md ]; then
+    echo -e "${YELLOW}Warning: RELEASE_NOTES.md not found.${NC}"
+    echo "Consider creating release notes to document this version."
+    read -p "Continue without RELEASE_NOTES? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        git checkout -
+        exit 1
+    fi
+fi
+
 # Commit the version changes
 echo -e "${GREEN}Committing version changes...${NC}"
-git add Makefile cmd/gocard/flags.go
+git add cmd/gocard/flags.go CHANGELOG.md RELEASE_NOTES.md
 git commit -m "chore: bump version to $VERSION for release"
 
 # Create and push the tag
@@ -56,5 +67,5 @@ git push -u origin "$BRANCH_NAME"
 
 echo -e "${GREEN}Release process initiated!${NC}"
 echo "The release workflow should now be running on GitHub."
-echo "You can check the progress at: https://github.com/[YOUR_USERNAME]/GoCard/actions"
+echo "You can check the progress at: https://github.com/DavidMiserak/GoCard/actions"
 echo -e "${YELLOW}Note: You may want to create a PR to merge these changes back to main.${NC}"
