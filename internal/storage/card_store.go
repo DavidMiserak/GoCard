@@ -469,6 +469,7 @@ func (s *CardStore) GetCardByPath(path string) (*card.Card, bool) {
 	return s.getCard(path)
 }
 
+// nolint: unused
 func (s *CardStore) getDeckByPath(path string) (*deck.Deck, bool) {
 	s.decksMu.RLock()
 	defer s.decksMu.RUnlock()
@@ -477,6 +478,7 @@ func (s *CardStore) getDeckByPath(path string) (*deck.Deck, bool) {
 }
 
 // removeSubDeckFromParent removes a subdeck from its parent
+// nolint: unused
 func (s *CardStore) removeSubDeckFromParent(parentDeck *deck.Deck, subDeckName string) {
 	parentDeck.RemoveSubDeck(subDeckName)
 }
