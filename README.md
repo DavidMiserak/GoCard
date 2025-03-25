@@ -9,22 +9,24 @@
 GoCard is a lightweight, file-based spaced repetition system (SRS) built in Go.
 It uses plain Markdown files organized in directories as its data source, making it perfect for developers who prefer working with text files and version control.
 
-> **Project Status**: First release (v0.1.0) - Core functionality implemented including SM-2 algorithm, file watching, terminal UI, and markdown rendering with syntax highlighting.
+> **Project Status**: Version 0.2.0 - Enhanced markdown support, terminal UI improvements, card editing interface with auto-save, tutorial mode for first-time users, and more.
 
 ## Features
 
 - **File-Based Storage**: All flashcards are stored as Markdown files in regular directories
 - **Git-Friendly**: Easily track changes, collaborate, and back up your knowledge base
 - **Terminal Interface**: Clean, distraction-free TUI for focused learning
-- **Markdown Support**: Full Markdown rendering with code syntax highlighting
+- **Rich Markdown Support**: Full Markdown rendering with Goldmark parser
+- **Code-Focused**: Enhanced features for programming-related cards:
+  - Syntax highlighting for 50+ languages with customizable themes
+  - Side-by-side diff view for comparing code
+- **Card Editor**: Built-in editor with auto-save and markdown preview
 - **Cross-Platform**: Works on Linux, macOS, and Windows
-- **Spaced Repetition Algorithm**: Implements the SM-2 algorithm for efficient learning
+- **Spaced Repetition Algorithm**: Enhanced SM-2 algorithm implementation
 - **Real-time File Watching**: Changes to card files are automatically detected and loaded
 - **Hierarchical Deck Navigation**: Browse your decks with vim and emacs keybindings
-- **Code-Focused**: Special features for programming-related cards:
-  - Syntax highlighting for 50+ languages
-  - Side-by-side diff view for comparing code
-- **Session Statistics**: Track your learning progress with detailed review stats
+- **Tutorial Mode**: Interactive guidance for first-time users
+- **Session Statistics**: Detailed summaries of your learning progress
 
 ## Installation
 
@@ -83,13 +85,6 @@ github.com/DavidMiserak/GoCard/
 ├── assets/                          # Application resources
 └── docs/                            # Documentation
 ```
-
-This package organization provides:
-
-- Clean separation of concerns
-- Better testability of individual components
-- Easier maintenance and extensibility
-- Adherence to Go best practices
 
 ## Command-Line Options
 
@@ -172,6 +167,33 @@ def two_sum(nums, target):
 gocard ~/GoCard
 ```
 
+## Tutorial Mode
+
+GoCard includes an interactive tutorial mode for first-time users. When you first run the application, you'll be guided through:
+
+- Basic GoCard concepts and organization
+- File-based storage structure
+- Deck navigation and review process
+- Card creation and editing
+- Keyboard shortcuts and navigation
+
+The tutorial includes sample cards that demonstrate effective use of various features.
+
+## Card Creation and Editing
+
+GoCard offers a built-in card editor with:
+
+- Title and tags input fields
+- Question and answer editing with multi-line support
+- Markdown preview mode (toggle with `Ctrl+p`)
+- Auto-save functionality to prevent data loss
+- Syntax highlighting preview for code blocks
+
+To access the editor:
+
+- Press `Ctrl+n` to create a new card
+- Press `Ctrl+e` to edit an existing card
+
 ## File Format
 
 Cards are stored as markdown files with a YAML frontmatter section for metadata:
@@ -201,71 +223,7 @@ Your answer goes here. This can include:
 - And any other markdown formatting
 ```
 
-## Directory Structure
-
-Organize your cards however you want! The directory structure becomes the deck structure:
-
-```sh
-~/gocard/
-├── algorithms/
-│   ├── sorting/
-│   │   ├── quicksort.md
-│   │   └── mergesort.md
-│   └── searching/
-│       ├── binary-search.md
-│       └── depth-first-search.md
-├── go-programming/
-│   ├── concurrency/
-│   │   ├── goroutines.md
-│   │   └── channels.md
-│   └── interfaces.md
-└── vocabulary/
-├── spanish.md
-└── german.md
-```
-
-## Deck Navigation
-
-GoCard lets you browse your deck hierarchy with an intuitive navigation interface:
-
-1. Press `Ctrl+o` from any screen to enter the deck navigation view
-2. Navigate between decks using arrow keys or vim keybindings
-3. Press `Enter` to select a deck or `Esc` to go back
-
-The deck navigation shows useful information for each deck:
-
-- Number of cards in the deck (including subdecks)
-- Number of cards due for review
-- Visual breadcrumb trail showing your current location
-
-Keyboard shortcuts make navigation efficient:
-
-- Arrow keys, `j`/`k` to move up/down
-- `Enter` to select a deck
-- `Esc` to go back
-
-## Spaced Repetition System
-
-GoCard implements the SM-2 algorithm for spaced repetition, similar to
-Anki. After reviewing a card, you rate how well you remembered it on a
-scale of 0-5:
-
-- **0-2**: Difficult, short interval
-- **3**: Correct, but required effort
-- **4-5**: Easy, longer interval
-
-The review intervals are calculated based on your performance and
-stored in the markdown file's frontmatter.
-
-## Terminal Interface
-
-GoCard provides a clean, minimalist terminal interface optimized for focused learning:
-
-- **Distraction-Free**: Simple design that lets you focus on learning
-- **Markdown Rendering**: Beautiful rendering of card content with syntax highlighting
-- **Keyboard-Driven**: Efficient workflow with intuitive keyboard shortcuts
-- **Progress Tracking**: Monitor your review session progress
-- **Session Statistics**: Summary view after completing a review session
+You can edit these files directly with any text editor, and GoCard will automatically detect changes.
 
 ## Keyboard Shortcuts
 
@@ -276,6 +234,10 @@ GoCard provides a clean, minimalist terminal interface optimized for focused lea
 | `Ctrl+o`             | Change deck                |
 | `Ctrl+alt+n`         | Create new deck            |
 | `Ctrl+n`             | Create new card            |
+| `Ctrl+e`             | Edit current card          |
+| `Ctrl+p`             | Toggle preview mode        |
+| `Ctrl+s`             | Save card                  |
+| `Ctrl+shift+s`       | Save and exit              |
 | `Ctrl+f`             | Search cards               |
 | `Ctrl+h` or `F1`     | Toggle help                |
 | `Ctrl+q`             | Quit                       |
@@ -284,40 +246,11 @@ GoCard provides a clean, minimalist terminal interface optimized for focused lea
 | `↓/j`                | Move down in lists         |
 | `Enter`              | Select/move forward        |
 | `Esc`                | Go back                    |
-| `Ctrl+e`             | Edit current card          |
-| `Ctrl+d`             | Delete current card        |
+| `Ctrl+x d`           | Delete current card        |
 | `Ctrl+t`             | Add/edit tags              |
-| `Ctrl+r`             | Rename deck                |
-| `Ctrl+Shift+d`       | Delete deck                |
+| `F2`                 | Rename deck                |
+| `Ctrl+alt+d`         | Delete deck                |
 | `Ctrl+m`             | Move cards between decks   |
-
-## Review Process
-
-The review process follows a simple flow:
-
-1. Cards due for review will be loaded automatically
-2. For each card:
-   - The question is shown first
-   - Press `Space` to reveal the answer
-   - Rate your recall from 0-5:
-     - `0-2`: Difficult/incorrect (short interval)
-     - `3`: Correct but required effort (moderate interval increase)
-     - `4-5`: Easy (longer interval increase)
-3. After reviewing all due cards, a summary is displayed showing:
-   - Number of cards reviewed
-   - Current card statistics (new, young, mature)
-   - Next scheduled review date
-
-## Real-time File Synchronization
-
-GoCard continuously monitors your cards directory for changes, allowing you to:
-
-- Edit cards with your favorite text editor while GoCard is running
-- Add new cards that instantly appear in the application
-- Organize cards into different directories (decks)
-- Collaborate with others using Git or other version control systems
-
-Changes are detected and loaded in real-time without requiring a restart.
 
 ## Configuration
 
@@ -421,14 +354,11 @@ GoCard uses GitHub Actions for continuous integration:
 
 The project is under active development with several features planned:
 
-1. **Card Creation and Editing Interface**: In-app card creation and editing
-2. **Search and Filter Functionality**: Advanced search capabilities for your card collection
-3. **Import/Export Compatibility**: Interoperability with other SRS systems like Anki
-4. **Customizable Styling and Themes**: Personalize your learning environment
-5. **Code Testing Integration**: Run and test code snippets directly from cards
-6. **Configuration File Management**: More customization options
-
-For more details, see the [issues.org](issues.org) file.
+1. **Search and Filter Functionality**: Advanced search capabilities for your card collection
+2. **Import/Export Compatibility**: Interoperability with other SRS systems like Anki
+3. **Customizable Styling and Themes**: Personalize your learning environment
+4. **Code Testing Integration**: Run and test code snippets directly from cards
+5. **Configuration File Management**: More customization options
 
 ## Contributing
 
