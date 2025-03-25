@@ -1,7 +1,4 @@
 // File: internal/storage/review.go
-
-// Package storage implements the file-based storage system for GoCard.
-// This file contains operations related to reviewing cards and spaced repetition.
 package storage
 
 import (
@@ -10,16 +7,38 @@ import (
 	"github.com/DavidMiserak/GoCard/internal/algorithm"
 	"github.com/DavidMiserak/GoCard/internal/card"
 	"github.com/DavidMiserak/GoCard/internal/deck"
+	"github.com/DavidMiserak/GoCard/internal/storage/models"
 )
 
-// ReviewCard reviews a card with the given difficulty rating (0-5)
-// and saves the updated card to disk
+// ReviewCard for legacy *card.Card type
 func (s *CardStore) ReviewCard(cardObj *card.Card, rating int) error {
 	// Apply the SM-2 algorithm to calculate the next review date
 	algorithm.SM2.CalculateNextReview(cardObj, rating)
 
 	// Save the updated card to disk
 	return s.SaveCard(cardObj)
+}
+
+// ReviewCardInterface for new models.CardInterface type
+func (s *CardStore) ReviewCardInterface(cardObj models.CardInterface, rating int) error {
+	// Convert to a legacy card for review
+	legacyCard := &card.Card{
+		Title:          cardObj.GetTitle(),
+		Question:       cardObj.GetQuestion(),
+		Answer:         cardObj.GetAnswer(),
+		Tags:           cardObj.GetTags(),
+		FilePath:       cardObj.GetFilePath(),
+		Created:        cardObj.GetCreatedTime(),
+		LastReviewed:   cardObj.GetLastReviewedTime(),
+		ReviewInterval: cardObj.GetReviewInterval(),
+		Difficulty:     cardObj.GetDifficulty(),
+	}
+
+	// Apply the SM-2 algorithm to calculate the next review date
+	algorithm.SM2.CalculateNextReview(legacyCard, rating)
+
+	// Save the updated card to disk
+	return s.SaveCard(legacyCard)
 }
 
 // GetDueCards returns all cards that are due for review
@@ -38,9 +57,9 @@ func (s *CardStore) GetDueCards() []*card.Card {
 // GetDueCardsInDeck returns due cards in a specific deck and its subdecks
 func (s *CardStore) GetDueCardsInDeck(deckObj *deck.Deck) []*card.Card {
 	var dueCards []*card.Card
-	seen := make(map[string]bool) // Track filepaths we've already seen
+	seen := make(map[string]bool)
 
-	// Get all cards in this deck and its subdecks
+	// Get all cards from the legacy deck
 	allCards := deckObj.GetAllCards()
 
 	// Filter for due cards

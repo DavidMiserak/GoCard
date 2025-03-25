@@ -109,9 +109,20 @@ func getCardsDirectory(opts *Options, cfg *config.Config) string {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		// If we can't get the home directory, use the current directory
+		fmt.Println("Warning: Could not determine home directory. Using current directory.")
 		return "GoCard"
 	}
-	return filepath.Join(homeDir, "GoCard")
+
+	// Construct the default GoCard directory
+	defaultDir := filepath.Join(homeDir, "GoCard")
+
+	// Ensure the directory exists and is writable
+	if err := os.MkdirAll(defaultDir, 0755); err != nil {
+		fmt.Printf("Warning: Could not create GoCard directory at %s: %v. Using current directory.\n", defaultDir, err)
+		return "GoCard"
+	}
+
+	return defaultDir
 }
 
 // applyFlagOverrides applies command-line flag overrides to the config
