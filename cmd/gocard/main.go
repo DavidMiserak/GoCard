@@ -1,99 +1,106 @@
-// File: cmd/gocard/main.go
+// cmd/gocard/main.go
 package main
 
 import (
+	"flag"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/DavidMiserak/GoCard/internal/config"
-	"github.com/DavidMiserak/GoCard/internal/storage"
-	"github.com/DavidMiserak/GoCard/internal/ui"
+	"github.com/DavidMiserak/GoCard/internal/service/storage"
+	"github.com/DavidMiserak/GoCard/pkg/algorithm"
+)
+
+// Default configuration values
+const (
+	defaultCardsDir = "~/GoCard"
 )
 
 func main() {
-	// Parse command line flags
-	opts, err := parseFlags()
+	// Parse command-line flags
+	cardsDir := flag.String("d", defaultCardsDir, "Cards directory")
+	flag.Parse()
+
+	// Expand home directory if needed
+	if *cardsDir == defaultCardsDir || strings.HasPrefix(*cardsDir, "~/") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error getting home directory: %v\n", err)
+			os.Exit(1)
+		}
+		*cardsDir = filepath.Join(home, strings.TrimPrefix(*cardsDir, "~/"))
+	}
+
+	// Initialize storage
+	storageService := storage.NewFileSystemStorage()
+	if err := storageService.Initialize(*cardsDir); err != nil {
+		fmt.Fprintf(os.Stderr, "Error initializing storage: %v\n", err)
+		os.Exit(1)
+	}
+	defer storageService.Close()
+
+	// Create an SM2 algorithm instance
+	sm2 := algorithm.NewSM2Algorithm()
+
+	// Basic info display
+	fmt.Println("GoCard - Spaced Repetition System")
+	fmt.Println("=================================")
+	fmt.Printf("Cards directory: %s\n\n", *cardsDir)
+
+	// List decks
+	deckPaths, err := storageService.ListDeckPaths(*cardsDir)
 	if err != nil {
-		log.Fatalf("Error parsing command-line flags: %v", err)
+		fmt.Fprintf(os.Stderr, "Error listing decks: %v\n", err)
+		os.Exit(1)
 	}
 
-	// Initialize configuration
-	cfg, err := config.Load(opts.ConfigPath)
-	if err != nil {
-		// Non-fatal, we'll use defaults
-		fmt.Printf("Warning: Failed to load configuration: %v\n", err)
-		cfg = config.Default()
+	if len(deckPaths) == 0 {
+		fmt.Println("No decks found. Create a directory structure with markdown files to get started.")
+		fmt.Println("Example structure:")
+		fmt.Println("  ~/GoCard/")
+		fmt.Println("  ├── Programming/")
+		fmt.Println("  │   ├── Go/")
+		fmt.Println("  │   │   ├── concurrency.md")
+		fmt.Println("  │   │   └── interfaces.md")
+		fmt.Println("  │   └── Python/")
+		fmt.Println("  │       └── generators.md")
+		fmt.Println("  └── Languages/")
+		fmt.Println("      └── Spanish/")
+		fmt.Println("          └── verbs.md")
+		os.Exit(0)
 	}
 
-	// Apply command-line overrides to config
-	applyFlagOverrides(cfg, opts)
-
-	// Create or use the directory for flashcards
-	cardsDir := getCardsDirectory(opts, cfg)
-	fmt.Printf("Using cards directory: %s\n", cardsDir)
-
-	// Attempt to create the directory with full permissions
-	if err := os.MkdirAll(cardsDir, 0777); err != nil {
-		log.Printf("Warning: Failed to create cards directory: %v", err)
-	}
-
-	// Check directory permissions
-	if _, err := os.Stat(cardsDir); err != nil {
-		log.Fatalf("Cannot access cards directory %s: %v", cardsDir, err)
-	}
-
-	// Verify directory is writable
-	testFile := filepath.Join(cardsDir, ".gocard_test_write")
-	if writeErr := os.WriteFile(testFile, []byte("test"), 0644); writeErr != nil {
-		log.Fatalf("Cannot write to cards directory %s: %v", cardsDir, writeErr)
-	} else {
-		os.Remove(testFile)
-	}
-
-	// Initialize our card store
-	store, err := storage.NewCardStore(cardsDir)
-	if err != nil {
-		log.Fatalf("Failed to initialize card store: %v", err)
-	}
-
-	// Configure logging
-	configureLogging(store, opts.Verbose, cfg.Logging.Level)
-
-	// Ensure we clean up resources when the program exits
-	defer store.Close()
-
-	// Check if this is the first run
-	isFirstRunApp := isFirstRun(cardsDir, cfg)
-
-	// If it's the first run or example mode is enabled, create example content
-	if isFirstRunApp || opts.ExampleMode {
-		// Create example content
-		fmt.Println("Creating example content...")
-		if err := createExampleContent(store); err != nil {
-			fmt.Printf("Warning: Failed to create example content: %v\n", err)
+	fmt.Println("Available decks:")
+	for i, deckPath := range deckPaths {
+		deck, err := storageService.LoadDeck(deckPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error loading deck %s: %v\n", deckPath, err)
+			continue
 		}
 
-		// Handle first run onboarding
-		if isFirstRunApp {
-			handleFirstRun(store, cfg, opts.UseTUI)
+		// Count cards in the deck
+		cardPaths, err := storageService.ListCardPaths(deckPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error listing cards in deck %s: %v\n", deckPath, err)
+			continue
 		}
+
+		// Count due cards
+		dueCount := 0
+		for _, cardPath := range cardPaths {
+			card, err := storageService.LoadCard(cardPath)
+			if err != nil {
+				continue
+			}
+			if sm2.IsDue(card) {
+				dueCount++
+			}
+		}
+
+		fmt.Printf("%d. %s (%d cards, %d due)\n", i+1, deck.Name, len(cardPaths), dueCount)
 	}
 
-	// If TUI mode is enabled, launch the terminal UI
-	if opts.UseTUI {
-		fmt.Printf("Starting GoCard terminal UI with cards from: %s\n", cardsDir)
-
-		// Start with tutorial if this is first run
-		startWithTutorial := isFirstRunApp
-
-		if err := ui.RunTUI(store, startWithTutorial); err != nil {
-			log.Fatalf("Error running terminal UI: %v", err)
-		}
-		return
-	}
-
-	// Otherwise, run the CLI mode
-	runCLIMode(store)
+	fmt.Println("\nThis is a simple demo showing the basic structure.")
+	fmt.Println("Run 'go build' to build the full application.")
 }
