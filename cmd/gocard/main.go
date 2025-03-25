@@ -4,6 +4,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/DavidMiserak/GoCard/internal/config"
 	"github.com/DavidMiserak/GoCard/internal/storage"
@@ -31,6 +33,24 @@ func main() {
 	// Create or use the directory for flashcards
 	cardsDir := getCardsDirectory(opts, cfg)
 	fmt.Printf("Using cards directory: %s\n", cardsDir)
+
+	// Attempt to create the directory with full permissions
+	if err := os.MkdirAll(cardsDir, 0777); err != nil {
+		log.Printf("Warning: Failed to create cards directory: %v", err)
+	}
+
+	// Check directory permissions
+	if _, err := os.Stat(cardsDir); err != nil {
+		log.Fatalf("Cannot access cards directory %s: %v", cardsDir, err)
+	}
+
+	// Verify directory is writable
+	testFile := filepath.Join(cardsDir, ".gocard_test_write")
+	if writeErr := os.WriteFile(testFile, []byte("test"), 0644); writeErr != nil {
+		log.Fatalf("Cannot write to cards directory %s: %v", cardsDir, writeErr)
+	} else {
+		os.Remove(testFile)
+	}
 
 	// Initialize our card store
 	store, err := storage.NewCardStore(cardsDir)
