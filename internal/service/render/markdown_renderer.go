@@ -1,4 +1,3 @@
-// internal/service/render/markdown_renderer.go
 package render
 
 import (
@@ -11,9 +10,8 @@ import (
 
 // MarkdownRenderer implements the RenderService interface
 type MarkdownRenderer struct {
-	codeTheme       string
-	showLineNumbers bool
-	styles          map[string]lipgloss.Style
+	codeTheme string
+	styles    map[string]lipgloss.Style
 }
 
 // NewMarkdownRenderer creates a new renderer with default settings
@@ -47,37 +45,18 @@ func NewMarkdownRenderer() interfaces.RenderService {
 		Bold(true)
 
 	return &MarkdownRenderer{
-		codeTheme:       "monokai",
-		showLineNumbers: true,
-		styles:          styles,
+		codeTheme: "monokai",
+		styles:    styles,
 	}
 }
 
 // RenderMarkdown converts markdown text to terminal-friendly formatted text
 func (r *MarkdownRenderer) RenderMarkdown(content string) (string, error) {
-	// Very simple implementation that just formats headers and code blocks
 	var result strings.Builder
 	lines := strings.Split(content, "\n")
 
-	inCodeBlock := false
-
 	for _, line := range lines {
-		if strings.HasPrefix(line, "```") {
-			inCodeBlock = !inCodeBlock
-			result.WriteString(line + "\n")
-			continue
-		}
-
-		if inCodeBlock {
-			// Format code lines with line numbers if enabled
-			if r.showLineNumbers {
-				line = "    " + line
-			}
-			result.WriteString(line + "\n")
-			continue
-		}
-
-		// Format headings
+		// Handle headings
 		if strings.HasPrefix(line, "# ") {
 			text := strings.TrimPrefix(line, "# ")
 			result.WriteString(r.styles["heading1"].Render(text) + "\n")
@@ -88,6 +67,7 @@ func (r *MarkdownRenderer) RenderMarkdown(content string) (string, error) {
 			text := strings.TrimPrefix(line, "### ")
 			result.WriteString(r.styles["heading3"].Render(text) + "\n")
 		} else {
+			// Write regular lines as-is
 			result.WriteString(line + "\n")
 		}
 	}
@@ -114,9 +94,12 @@ func (r *MarkdownRenderer) RenderMarkdownWithTheme(content string, theme string)
 
 // GetAvailableCodeThemes returns a list of available syntax highlighting themes
 func (r *MarkdownRenderer) GetAvailableCodeThemes() []string {
-	// Return a static list of supported themes
 	return []string{
-		"monokai", "github", "vs", "solarized-dark", "solarized-light",
+		"monokai",
+		"github",
+		"dracula",
+		"solarized-dark",
+		"vs",
 	}
 }
 
@@ -125,17 +108,22 @@ func (r *MarkdownRenderer) SetCodeTheme(theme string) {
 	r.codeTheme = theme
 }
 
-// EnableLineNumbers toggles line numbers in code blocks
+// EnableLineNumbers is a no-op since line numbers are not implemented
 func (r *MarkdownRenderer) EnableLineNumbers(enabled bool) {
-	r.showLineNumbers = enabled
+	// Do nothing
 }
 
 // StyleHeading applies heading styles
 func (r *MarkdownRenderer) StyleHeading(text string, level int) string {
-	styleKey := fmt.Sprintf("heading%d", level)
-	style, exists := r.styles[styleKey]
-	if !exists {
-		// Default to heading1 style
+	var style lipgloss.Style
+	switch level {
+	case 1:
+		style = r.styles["heading1"]
+	case 2:
+		style = r.styles["heading2"]
+	case 3:
+		style = r.styles["heading3"]
+	default:
 		style = r.styles["heading1"]
 	}
 	return style.Render(text)
