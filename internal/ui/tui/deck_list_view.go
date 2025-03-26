@@ -16,44 +16,13 @@ type errMsg struct{ err error }
 
 func (e errMsg) Error() string { return e.err.Error() }
 
-func (m *DeckListModel) Init() tea.Cmd {
-	return m.loadDecks
-}
-
-func (m *DeckListModel) loadDecks() tea.Msg {
-	currentPath := m.RootDir
-	if len(m.Breadcrumbs) > 1 {
-		currentPath = m.Breadcrumbs[len(m.Breadcrumbs)-1]
-	}
-
-	subdecks, err := m.DeckService.GetSubdecks(currentPath)
-	if err != nil {
-		log.Printf("Error: %v", err)
-		return errMsg{err}
-	}
-
-	var deckItems []DeckItem
-	for _, deck := range subdecks {
-		stats, err := m.DeckService.GetCardStats(deck.Path)
-		if err != nil {
-			log.Printf("Error: %v", err)
-			continue // Skip decks with stat retrieval errors
-		}
-
-		deckItems = append(deckItems, DeckItem{
-			Path:       deck.Path,
-			Name:       deck.Name,
-			TotalCards: stats["total"],
-			DueCards:   stats["due"],
-		})
-	}
-
-	m.Decks = deckItems
-	return nil
-}
-
 func (m *DeckListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.TerminalWidth = msg.Width
+		m.TerminalHeight = msg.Height
+		return m, nil
+
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, m.Keys.Quit):
@@ -69,19 +38,18 @@ func (m *DeckListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if len(m.Decks) > 0 {
 				selectedDeck := m.Decks[m.Cursor]
 				m.Breadcrumbs = append(m.Breadcrumbs, selectedDeck.Path)
-				return m, m.loadDecks
+				return m, m.loadDecks()
 			}
 
 		case key.Matches(msg, m.Keys.Back):
 			if len(m.Breadcrumbs) > 1 {
 				m.Breadcrumbs = m.Breadcrumbs[:len(m.Breadcrumbs)-1]
 				m.Cursor = 0
-				return m, m.loadDecks
+				return m, m.loadDecks()
 			}
 		}
 
 	case errMsg:
-		// Handle errors
 		log.Printf("Error: %v", msg.err)
 		return m, nil
 	}
@@ -92,18 +60,45 @@ func (m *DeckListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *DeckListModel) View() string {
 	s := strings.Builder{}
 
+	// Fallback terminal size if not set
+	width := m.TerminalWidth
+	if width == 0 {
+		width = 80
+	}
+	height := m.TerminalHeight
+	if height == 0 {
+		height = 24
+	}
+
+	// Terminal size styles
+	baseStyle := lipgloss.NewStyle().
+		Width(width).
+		Height(height)
+
 	// Breadcrumb
 	breadcrumbStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("252")).
-		Bold(true)
+		Bold(true).
+		Width(width)
 	s.WriteString(breadcrumbStyle.Render(strings.Join(m.Breadcrumbs, " > ")) + "\n\n")
 
-	// Deck List
+	// No Decks View
 	if len(m.Decks) == 0 {
-		s.WriteString("No decks found.\n")
-		return s.String()
+		welcomeStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("39")).
+			Bold(true).
+			Width(width).
+			Align(lipgloss.Center)
+
+		welcomeMessage := "Welcome to GoCard!\n\n" +
+			"We've created some default decks to help you get started.\n" +
+			"Use arrow keys to navigate, 'Enter' to select, and 'q' to quit."
+
+		s.WriteString(welcomeStyle.Render(welcomeMessage))
+		return baseStyle.Render(s.String())
 	}
 
+	// Deck List
 	for i, deck := range m.Decks {
 		// Cursor styling
 		cursor := " "
@@ -132,5 +127,5 @@ func (m *DeckListModel) View() string {
 		s.WriteString(deckLine)
 	}
 
-	return s.String()
+	return baseStyle.Render(s.String())
 }
