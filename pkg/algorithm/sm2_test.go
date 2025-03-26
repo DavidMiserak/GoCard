@@ -185,3 +185,62 @@ func TestCalculateEaseFactor(t *testing.T) {
 		})
 	}
 }
+
+// Test for GetDueDate
+func TestGetDueDate(t *testing.T) {
+	sm2 := NewSM2Algorithm()
+
+	// Create test cases with a fixed reference time (midnight)
+	referenceTime := time.Date(2025, 3, 25, 0, 0, 0, 0, time.UTC)
+
+	testCases := []struct {
+		name     string
+		card     domain.Card
+		expected time.Time
+	}{
+		{
+			name: "new card never reviewed",
+			card: domain.Card{
+				LastReviewed:   time.Time{}, // zero value
+				ReviewInterval: 1,
+			},
+			// Special case: for never-reviewed cards, expect "now" - we'll test differently
+		},
+		{
+			name: "card with 1 day interval",
+			card: domain.Card{
+				LastReviewed:   referenceTime,
+				ReviewInterval: 1,
+			},
+			expected: time.Date(2025, 3, 26, 0, 0, 0, 0, time.UTC), // 1 day later, midnight
+		},
+		{
+			name: "card with 7 day interval",
+			card: domain.Card{
+				LastReviewed:   referenceTime,
+				ReviewInterval: 7,
+			},
+			expected: time.Date(2025, 4, 1, 0, 0, 0, 0, time.UTC), // 7 days later, midnight
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := sm2.GetDueDate(tc.card)
+
+			if tc.card.LastReviewed.IsZero() {
+				// For never-reviewed cards, verify result is close to current time
+				timeDiff := time.Since(result)
+				if timeDiff > time.Second*2 || timeDiff < -time.Second*2 {
+					t.Errorf("expected time close to now, got difference of %v", timeDiff)
+				}
+				return
+			}
+
+			// For normal cases, compare exact times
+			if !result.Equal(tc.expected) {
+				t.Errorf("expected due date %v, got %v", tc.expected, result)
+			}
+		})
+	}
+}

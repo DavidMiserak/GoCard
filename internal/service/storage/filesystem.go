@@ -59,6 +59,11 @@ func (fs *FileSystemStorage) Close() error {
 	return nil
 }
 
+// ForceCardIntoCache adds a card directly to the cache (for testing)
+func (fs *FileSystemStorage) ForceCardIntoCache(card domain.Card) {
+	fs.cardCache[card.FilePath] = card
+}
+
 // LoadCard loads a card from a file
 func (fs *FileSystemStorage) LoadCard(filePath string) (domain.Card, error) {
 	// Check cache first
@@ -115,16 +120,39 @@ func (fs *FileSystemStorage) LoadCard(filePath string) (domain.Card, error) {
 			card.Created = t
 		}
 	}
+
+	// Enhanced date parsing for last_reviewed
 	if lastReviewed, ok := frontmatter["last_reviewed"].(string); ok {
-		if t, err := time.Parse("2006-01-02", lastReviewed); err == nil {
+		// This will explicitly parse the date string
+		t, err := time.Parse("2006-01-02", lastReviewed)
+		if err == nil {
 			card.LastReviewed = t
+			fmt.Printf("DEBUG: Successfully parsed last_reviewed: %s -> %v\n",
+				lastReviewed, t.Format("2006-01-02"))
+		} else {
+			fmt.Printf("DEBUG: Failed to parse last_reviewed: %s, error: %v\n",
+				lastReviewed, err)
+		}
+	} else {
+		// Check what type the value actually is
+		if lastReviewed, exists := frontmatter["last_reviewed"]; exists {
+			fmt.Printf("DEBUG: last_reviewed exists but is type: %T, value: %v\n",
+				lastReviewed, lastReviewed)
 		}
 	}
+
+	// Handle numeric values from YAML
 	if interval, ok := frontmatter["review_interval"].(int); ok {
 		card.ReviewInterval = interval
+	} else if intervalFloat, ok := frontmatter["review_interval"].(float64); ok {
+		// YAML parser often converts numbers to float64
+		card.ReviewInterval = int(intervalFloat)
 	}
 	if difficulty, ok := frontmatter["difficulty"].(int); ok {
 		card.Difficulty = difficulty
+	} else if difficultyFloat, ok := frontmatter["difficulty"].(float64); ok {
+		// YAML parser often converts numbers to float64
+		card.Difficulty = int(difficultyFloat)
 	}
 
 	// Cache the card
@@ -208,6 +236,7 @@ func (fs *FileSystemStorage) ParseFrontmatter(content []byte) (map[string]interf
 
 	// Extract the frontmatter content
 	yamlContent := restContent[:endIndex]
+	yamlContent = strings.TrimSpace(yamlContent) // Trim whitespace before parsing
 
 	// Parse the YAML
 	var frontmatter map[string]interface{}

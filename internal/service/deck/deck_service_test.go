@@ -4,8 +4,11 @@ package deck
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/DavidMiserak/GoCard/internal/domain"
 	"github.com/DavidMiserak/GoCard/internal/service/card"
 	"github.com/DavidMiserak/GoCard/internal/service/storage"
 	"github.com/DavidMiserak/GoCard/pkg/algorithm"
@@ -116,6 +119,18 @@ ellos/ellas/ustedes hablan
 	}
 
 	return nil
+}
+
+// Helper to create a sample card file
+func createSampleCardFile(dir, filename, content string) (string, error) {
+	// Fix any newline issues and ensure proper formatting
+	content = strings.ReplaceAll(content, "\r\n", "\n") // Normalize newlines
+	if !strings.HasSuffix(content, "\n") {
+		content += "\n" // Ensure file ends with newline
+	}
+
+	filePath := filepath.Join(dir, filename)
+	return filePath, os.WriteFile(filePath, []byte(content), 0644)
 }
 
 func TestGetDeck(t *testing.T) {
@@ -284,5 +299,108 @@ func TestGetCardStats(t *testing.T) {
 
 	if stats["due"] != 1 {
 		t.Errorf("expected 1 due card, got %d", stats["due"])
+	}
+}
+
+// Test for GetDueCards - using direct cache manipulation for test stability
+func TestGetDueCards(t *testing.T) {
+	tempDir, deckService, cleanup := setupDeckServiceTest(t)
+	defer cleanup()
+
+	// Create test structure with cards having different due states
+	err := os.MkdirAll(filepath.Join(tempDir, "DueCards"), 0755)
+	if err != nil {
+		t.Fatalf("failed to create test directory: %v", err)
+	}
+
+	// Create basic card files (content doesn't matter for this test)
+	basicCardContent := `---
+title: Card
+---
+# Question
+?
+---
+Answer.
+`
+
+	// Create the card files
+	dueCardPath, err := createSampleCardFile(filepath.Join(tempDir, "DueCards"), "due-card.md", basicCardContent)
+	if err != nil {
+		t.Fatalf("failed to create sample card file: %v", err)
+	}
+
+	dueReviewedCardPath, err := createSampleCardFile(filepath.Join(tempDir, "DueCards"), "due-reviewed-card.md", basicCardContent)
+	if err != nil {
+		t.Fatalf("failed to create sample card file: %v", err)
+	}
+
+	notDueCardPath, err := createSampleCardFile(filepath.Join(tempDir, "DueCards"), "not-due-card.md", basicCardContent)
+	if err != nil {
+		t.Fatalf("failed to create sample card file: %v", err)
+	}
+
+	// Create cards with correct dates directly
+	dueCard := domain.Card{
+		FilePath:     dueCardPath,
+		Title:        "Due Card",
+		LastReviewed: time.Time{}, // Zero time for never reviewed - always due
+	}
+
+	dueReviewedCard := domain.Card{
+		FilePath:       dueReviewedCardPath,
+		Title:          "Due Reviewed Card",
+		LastReviewed:   time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+		ReviewInterval: 1, // Due because the interval has passed
+	}
+
+	notDueCard := domain.Card{
+		FilePath:       notDueCardPath,
+		Title:          "Not Due Card",
+		LastReviewed:   time.Date(2030, 1, 1, 0, 0, 0, 0, time.UTC),
+		ReviewInterval: 365, // Not due because it's in the future
+	}
+
+	// Force cards into cache directly
+	storage := deckService.storage.(*storage.FileSystemStorage)
+	storage.ForceCardIntoCache(dueCard)
+	storage.ForceCardIntoCache(dueReviewedCard)
+	storage.ForceCardIntoCache(notDueCard)
+
+	// Get due cards
+	deckPath := filepath.Join(tempDir, "DueCards")
+	dueCards, err := deckService.GetDueCards(deckPath)
+
+	// Verify no error
+	if err != nil {
+		t.Fatalf("GetDueCards() error = %v", err)
+	}
+
+	// Expect 2 due cards
+	if len(dueCards) != 2 {
+		t.Errorf("expected 2 due cards, got %d", len(dueCards))
+	}
+
+	// Verify the right cards were returned
+	duePaths := make(map[string]bool)
+	for _, card := range dueCards {
+		duePaths[card.FilePath] = true
+	}
+
+	if !duePaths[dueCardPath] {
+		t.Errorf("expected %s to be due", dueCardPath)
+	}
+
+	if !duePaths[dueReviewedCardPath] {
+		t.Errorf("expected %s to be due", dueReviewedCardPath)
+	}
+
+	if duePaths[notDueCardPath] {
+		t.Errorf("expected %s to not be due", notDueCardPath)
+	}
+
+	// Test error case - non-existent deck
+	_, err = deckService.GetDueCards(filepath.Join(tempDir, "NonExistentDeck"))
+	if err == nil {
+		t.Error("expected error for non-existent deck, got nil")
 	}
 }
