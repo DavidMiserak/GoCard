@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -116,43 +117,70 @@ func (fs *FileSystemStorage) LoadCard(filePath string) (domain.Card, error) {
 
 	// Extract review metadata
 	if created, ok := frontmatter["created"].(string); ok {
-		if t, err := time.Parse("2006-01-02", created); err == nil {
-			card.Created = t
-		}
-	}
-
-	// Enhanced date parsing for last_reviewed
-	if lastReviewed, ok := frontmatter["last_reviewed"].(string); ok {
-		// This will explicitly parse the date string
-		t, err := time.Parse("2006-01-02", lastReviewed)
+		createdTime, err := parseYAMLDate(created)
 		if err == nil {
-			card.LastReviewed = t
-			fmt.Printf("DEBUG: Successfully parsed last_reviewed: %s -> %v\n",
-				lastReviewed, t.Format("2006-01-02"))
-		} else {
-			fmt.Printf("DEBUG: Failed to parse last_reviewed: %s, error: %v\n",
-				lastReviewed, err)
-		}
-	} else {
-		// Check what type the value actually is
-		if lastReviewed, exists := frontmatter["last_reviewed"]; exists {
-			fmt.Printf("DEBUG: last_reviewed exists but is type: %T, value: %v\n",
-				lastReviewed, lastReviewed)
+			card.Created = createdTime
 		}
 	}
 
-	// Handle numeric values from YAML
-	if interval, ok := frontmatter["review_interval"].(int); ok {
-		card.ReviewInterval = interval
-	} else if intervalFloat, ok := frontmatter["review_interval"].(float64); ok {
-		// YAML parser often converts numbers to float64
-		card.ReviewInterval = int(intervalFloat)
+	// Parse last_reviewed date with improved error handling
+	if lastReviewed, exists := frontmatter["last_reviewed"]; exists {
+		var lastReviewedTime time.Time
+		var err error
+
+		switch v := lastReviewed.(type) {
+		case string:
+			// Handle string format (most common case)
+			lastReviewedTime, err = parseYAMLDate(v)
+		case time.Time:
+			// Direct time.Time value from YAML parser
+			lastReviewedTime = v
+		case int:
+			// Handle Unix timestamp (seconds since epoch)
+			lastReviewedTime = time.Unix(int64(v), 0)
+		case float64:
+			// Handle Unix timestamp as float
+			lastReviewedTime = time.Unix(int64(v), 0)
+		case nil:
+			// Explicit nil value
+			lastReviewedTime = time.Time{}
+		default:
+			// Unhandled type
+			err = fmt.Errorf("unsupported type for last_reviewed: %T", v)
+		}
+
+		if err == nil {
+			card.LastReviewed = lastReviewedTime
+		}
 	}
-	if difficulty, ok := frontmatter["difficulty"].(int); ok {
-		card.Difficulty = difficulty
-	} else if difficultyFloat, ok := frontmatter["difficulty"].(float64); ok {
-		// YAML parser often converts numbers to float64
-		card.Difficulty = int(difficultyFloat)
+
+	// Handle numeric values from YAML with improved type handling
+	if reviewInterval, exists := frontmatter["review_interval"]; exists {
+		switch v := reviewInterval.(type) {
+		case int:
+			card.ReviewInterval = v
+		case float64:
+			card.ReviewInterval = int(v)
+		case string:
+			// Try to parse string as integer
+			if intVal, err := strconv.Atoi(v); err == nil {
+				card.ReviewInterval = intVal
+			}
+		}
+	}
+
+	if difficulty, exists := frontmatter["difficulty"]; exists {
+		switch v := difficulty.(type) {
+		case int:
+			card.Difficulty = v
+		case float64:
+			card.Difficulty = int(v)
+		case string:
+			// Try to parse string as integer
+			if intVal, err := strconv.Atoi(v); err == nil {
+				card.Difficulty = intVal
+			}
+		}
 	}
 
 	// Cache the card
@@ -388,3 +416,25 @@ func (fs *FileSystemStorage) SearchCards(query string) ([]domain.Card, error) {
 
 // Ensure FileSystemStorage implements StorageService
 var _ interfaces.StorageService = (*FileSystemStorage)(nil)
+
+// parseYAMLDate handles multiple date formats from YAML frontmatter
+func parseYAMLDate(dateStr string) (time.Time, error) {
+	// Try different date formats in order of preference
+	formats := []string{
+		"2006-01-02",           // ISO date
+		"2006-01-02T15:04:05Z", // ISO datetime
+		"2006-01-02 15:04:05",  // Common datetime format
+		time.RFC3339,           // RFC3339
+		time.RFC822,            // RFC822
+		"January 2, 2006",      // Human readable
+		"Jan 2, 2006",          // Short month
+	}
+
+	for _, format := range formats {
+		if t, err := time.Parse(format, dateStr); err == nil {
+			return t, nil
+		}
+	}
+
+	return time.Time{}, fmt.Errorf("unable to parse date '%s'", dateStr)
+}
