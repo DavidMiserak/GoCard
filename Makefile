@@ -31,7 +31,7 @@ test:
 .PHONY: test-cover
 test-cover:
 	go test -coverprofile=coverage.out ./...
-	go tool cover -func=coverage.out
+	go tool cover -func=coverage.out | tee coverage.log
 
 .PHONY: test-cover-html
 test-cover-html: test-cover
