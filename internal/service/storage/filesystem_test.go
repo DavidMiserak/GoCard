@@ -60,31 +60,30 @@ func createSampleDeckStructure(baseDir string) error {
 	cardContents := map[string]string{
 		filepath.Join(baseDir, "Programming", "Go", "concurrency.md"): `---
 title: Go Concurrency
-tags:
-  - go
-  - programming
-  - concurrency
+tags: [go,programming,concurrency]
 difficulty: 2
 last_reviewed: 2023-01-01
 review_interval: 7
 ---
-# What is the difference between a goroutine and a thread?
+# Go Concurrency
 
----
+## Question
+What is the difference between a goroutine and a thread?
 
+## Answer
 Goroutines are lighter weight than threads.
 `,
 		filepath.Join(baseDir, "Languages", "Spanish", "verbs.md"): `---
 title: Spanish Verbs
-tags:
-  - spanish
-  - language
+tags: [spanish,language,grammar]
 difficulty: 3
 ---
-# What is the conjugation of "hablar" in present tense?
+# Spanish Verbs
 
----
+## Question
+What is the conjugation of "hablar" in present tense?
 
+## Answer
 yo hablo
 tú hablas
 él/ella/usted habla
@@ -132,19 +131,17 @@ func TestLoadCard(t *testing.T) {
 	// Create a sample card file
 	cardContent := `---
 title: Test Card
-tags:
-  - test
-  - sample
+tags: [test,sample]
 difficulty: 3
 last_reviewed: 2023-01-15
 review_interval: 14
 ---
-# Test Question
+# Test Card
 
+## Question
 This is a test question.
 
----
-
+## Answer
 This is the answer.
 `
 	cardPath, err := createSampleCardFile(tempDir, "test-card.md", cardContent)
@@ -176,8 +173,8 @@ This is the answer.
 	}
 
 	// Check question and answer extraction
-	if !strings.Contains(card.Question, "Test Question") {
-		t.Errorf("expected Question to contain 'Test Question', got '%s'", card.Question)
+	if !strings.Contains(card.Question, "This is a test question") {
+		t.Errorf("expected Question to contain 'This is a test question', got '%s'", card.Question)
 	}
 
 	if !strings.Contains(card.Answer, "This is the answer") {
@@ -210,16 +207,15 @@ func TestUpdateCardMetadata(t *testing.T) {
 	// Create a sample card file
 	cardContent := `---
 title: Test Card
-tags:
-  - test
+tags: [test]
 difficulty: 3
 ---
-# Question
+# Test Card
 
+## Question
 What is this test for?
 
----
-
+## Answer
 To test UpdateCardMetadata.
 `
 	cardPath, err := createSampleCardFile(tempDir, "update-test.md", cardContent)

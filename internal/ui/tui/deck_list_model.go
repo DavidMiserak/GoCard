@@ -91,50 +91,101 @@ func (m *DeckListModel) createDefaultDecks() tea.Cmd {
 				path: filepath.Join(goDeckPath, "concurrency.md"),
 				content: []byte(`---
 title: Go Concurrency
-tags:
-  - go
-  - programming
+tags: [go,programming,concurrency]
 difficulty: 3
 ---
-# What is a goroutine?
+# Go Concurrency
 
----
+## Question
+
+What is a goroutine?
+
+## Answer
 
 A goroutine is a lightweight thread managed by the Go runtime. It allows concurrent execution of functions.
+
+Key features:
+- Much lighter weight than OS threads
+- Managed by Go's runtime scheduler
+- Can scale to thousands or millions in a single program
+- Created with the 'go' keyword before a function call
 `),
 			},
 			{
 				path: filepath.Join(pythonDeckPath, "list_comprehensions.md"),
 				content: []byte(`---
 title: Python List Comprehensions
-tags:
-  - python
-  - programming
+tags: [python,programming,data-structures]
 difficulty: 2
 ---
-# What is a list comprehension?
+# Python List Comprehensions
 
----
+## Question
+
+What is a list comprehension?
+
+## Answer
 
 A list comprehension is a concise way to create lists in Python, offering a compact alternative to using for loops.
+
+### Basic syntax:
+` + "```python" + `
+[expression for item in iterable]
+` + "```" + `
+
+### With conditional filtering:
+` + "```python" + `
+[expression for item in iterable if condition]
+` + "```" + `
+
+### Example:
+` + "```python" + `
+# Create a list of squares
+squares = [x**2 for x in range(10)]
+# Result: [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+
+# Only even numbers
+even_squares = [x**2 for x in range(10) if x % 2 == 0]
+# Result: [0, 4, 16, 36, 64]
+` + "```" + `
 `),
 			},
 			{
 				path: filepath.Join(spanishDeckPath, "basic_verbs.md"),
 				content: []byte(`---
 title: Basic Spanish Verbs
-tags:
-  - spanish
-  - languages
+tags: [spanish,language,grammar,verbs]
 difficulty: 1
 ---
-# What are the basic forms of "ser" and "estar"?
+# Basic Spanish Verbs
 
----
+## Question
+
+What are the basic forms of "ser" and "estar"?
+
+## Answer
 
 "Ser" and "estar" are both forms of "to be" in Spanish, but they are used differently:
-- "Ser" is used for permanent characteristics
-- "Estar" is used for temporary states or locations
+
+### Ser (permanent qualities):
+- Yo soy (I am)
+- Tú eres (You are)
+- Él/Ella/Usted es (He/She/You formal is)
+- Nosotros/as somos (We are)
+- Vosotros/as sois (You all are - Spain)
+- Ellos/Ellas/Ustedes son (They/You all are)
+
+### Estar (temporary states or locations):
+- Yo estoy (I am)
+- Tú estás (You are)
+- Él/Ella/Usted está (He/She/You formal is)
+- Nosotros/as estamos (We are)
+- Vosotros/as estáis (You all are - Spain)
+- Ellos/Ellas/Ustedes están (They/You all are)
+
+### Usage:
+- Use "ser" for: identity, occupation, nationality, time, characteristics
+- Use "estar" for: location, temporary conditions, ongoing actions
 `),
 			},
 		}
