@@ -7,7 +7,6 @@ toolchain go1.24.1
 
 require (
 	github.com/charmbracelet/lipgloss v0.10.0
-	github.com/yuin/goldmark v1.7.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
