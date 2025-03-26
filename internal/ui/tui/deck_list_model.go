@@ -11,23 +11,30 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// StartReviewMsg is a message to start a review session
+type StartReviewMsg struct {
+	DeckPath string
+}
+
 type DeckItem struct {
 	Path       string
 	Name       string
 	TotalCards int
 	DueCards   int
+	NewCards   int
 }
 
 type DeckListModel struct {
-	DeckService    interfaces.DeckService
-	StorageService interfaces.StorageService
-	RootDir        string
-	Decks          []DeckItem
-	Cursor         int
-	Breadcrumbs    []string
-	Keys           DeckListKeyMap
-	TerminalWidth  int
-	TerminalHeight int
+	DeckService     interfaces.DeckService
+	StorageService  interfaces.StorageService
+	RootDir         string
+	Decks           []DeckItem
+	Cursor          int
+	Breadcrumbs     []string
+	BreadcrumbPaths []string
+	Keys            DeckListKeyMap
+	TerminalWidth   int
+	TerminalHeight  int
 }
 
 func NewDeckListModel(
@@ -36,11 +43,12 @@ func NewDeckListModel(
 	rootDir string,
 ) *DeckListModel {
 	return &DeckListModel{
-		DeckService:    deckService,
-		StorageService: storageService,
-		RootDir:        rootDir,
-		Breadcrumbs:    []string{"Home"},
-		Keys:           DefaultDeckListKeyMap(),
+		DeckService:     deckService,
+		StorageService:  storageService,
+		RootDir:         rootDir,
+		Breadcrumbs:     []string{"Home"},
+		BreadcrumbPaths: []string{rootDir},
+		Keys:            DefaultDeckListKeyMap(),
 	}
 }
 
@@ -150,11 +158,9 @@ difficulty: 1
 
 func (m *DeckListModel) loadDecks() tea.Cmd {
 	return func() tea.Msg {
-		currentPath := m.RootDir
-		if len(m.Breadcrumbs) > 1 {
-			currentPath = m.Breadcrumbs[len(m.Breadcrumbs)-1]
-		}
+		currentPath := m.getCurrentPath()
 
+		// Get all decks at this path
 		subdecks, err := m.DeckService.GetSubdecks(currentPath)
 		if err != nil {
 			return errMsg{err}
@@ -172,12 +178,105 @@ func (m *DeckListModel) loadDecks() tea.Cmd {
 				Name:       deck.Name,
 				TotalCards: stats["total"],
 				DueCards:   stats["due"],
+				NewCards:   stats["new"],
 			})
 		}
 
 		m.Decks = deckItems
+
+		// Reset cursor if out of bounds
+		if len(m.Decks) > 0 {
+			m.Cursor = min(m.Cursor, len(m.Decks)-1)
+		} else {
+			m.Cursor = 0
+		}
+
 		return nil
 	}
+}
+
+// getCurrentPath returns the current path based on breadcrumbs
+func (m *DeckListModel) getCurrentPath() string {
+	if len(m.BreadcrumbPaths) == 0 {
+		return m.RootDir
+	}
+	return m.BreadcrumbPaths[len(m.BreadcrumbPaths)-1]
+}
+
+func (m *DeckListModel) navigateUp() {
+	if len(m.Decks) == 0 {
+		return
+	}
+
+	// Implement circular navigation - if at the top, wrap to bottom
+	if m.Cursor <= 0 {
+		m.Cursor = len(m.Decks) - 1
+	} else {
+		m.Cursor--
+	}
+}
+
+func (m *DeckListModel) navigateDown() {
+	if len(m.Decks) == 0 {
+		return
+	}
+
+	// Implement circular navigation - if at the bottom, wrap to top
+	if m.Cursor >= len(m.Decks)-1 {
+		m.Cursor = 0
+	} else {
+		m.Cursor++
+	}
+}
+
+func (m *DeckListModel) enterDeck() tea.Cmd {
+	if len(m.Decks) == 0 {
+		return nil
+	}
+
+	selectedDeck := m.Decks[m.Cursor]
+	m.Breadcrumbs = append(m.Breadcrumbs, selectedDeck.Name)
+	m.BreadcrumbPaths = append(m.BreadcrumbPaths, selectedDeck.Path)
+	m.Cursor = 0 // Reset cursor when entering a new deck
+
+	return m.loadDecks()
+}
+
+func (m *DeckListModel) navigateBack() tea.Cmd {
+	if len(m.Breadcrumbs) <= 1 {
+		return nil
+	}
+
+	m.Breadcrumbs = m.Breadcrumbs[:len(m.Breadcrumbs)-1]
+	m.BreadcrumbPaths = m.BreadcrumbPaths[:len(m.BreadcrumbPaths)-1]
+	m.Cursor = 0 // Reset cursor when going back
+
+	return m.loadDecks()
+}
+
+func (m *DeckListModel) startReview() tea.Cmd {
+	if len(m.Decks) == 0 {
+		return nil
+	}
+
+	selectedDeck := m.Decks[m.Cursor]
+	return func() tea.Msg {
+		// Check if deck has due cards
+		dueCards, err := m.DeckService.GetDueCards(selectedDeck.Path)
+		if err != nil || len(dueCards) == 0 {
+			// Return a message to show no cards are due
+			return NoDueCardsMsg{DeckPath: selectedDeck.Path, DeckName: selectedDeck.Name}
+		}
+
+		// Signal to start review
+		return StartReviewMsg{DeckPath: selectedDeck.Path}
+	}
+}
+
+// NoDueCardsMsg is sent when a deck has no due cards
+type NoDueCardsMsg struct {
+	DeckPath string
+	DeckName string
 }
 
 func (m *DeckListModel) Init() tea.Cmd {
@@ -201,12 +300,10 @@ func min(a, b int) int {
 	return b
 }
 
+// nolint:unused
 func max(a, b int) int {
 	if a > b {
 		return a
 	}
 	return b
 }
-
-// Ensure the model implements tea.Model
-var _ tea.Model = (*DeckListModel)(nil)

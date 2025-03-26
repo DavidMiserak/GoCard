@@ -9,6 +9,7 @@ import (
 
 	"github.com/DavidMiserak/GoCard/internal/service/card"
 	"github.com/DavidMiserak/GoCard/internal/service/deck"
+	"github.com/DavidMiserak/GoCard/internal/service/review"
 	"github.com/DavidMiserak/GoCard/internal/service/storage"
 	"github.com/DavidMiserak/GoCard/internal/ui/tui"
 	"github.com/DavidMiserak/GoCard/pkg/algorithm"
@@ -37,12 +38,13 @@ func main() {
 	alg := algorithm.NewSM2Algorithm()
 	cardService := card.NewCardService(storageService, alg)
 	deckService := deck.NewDeckService(storageService, cardService)
+	reviewService := review.NewReviewService(storageService, cardService, deckService, alg)
 
-	// Create the deck list model
-	model := tui.NewDeckListModel(deckService, storageService, cardsDir)
+	// Create the application model
+	model := tui.NewAppModel(deckService, cardService, reviewService, storageService, cardsDir)
 
 	// Start the Bubble Tea program
-	p := tea.NewProgram(model)
+	p := tea.NewProgram(model, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
