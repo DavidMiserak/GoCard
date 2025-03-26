@@ -64,6 +64,7 @@ func (rs *ReviewSession) SubmitRating(rating int) error {
 
 // IsComplete checks if all cards in the session have been reviewed
 func (rs *ReviewSession) IsComplete() bool {
+	// Check if all card paths have been processed
 	return rs.CurrentCard >= len(rs.CardPaths)
 }
 
@@ -73,6 +74,7 @@ func (rs *ReviewSession) GenerateSummary() ReviewSessionSummary {
 	totalRating := 0
 	newCards := 0
 
+	// Count completed cards by checking the Completed slice
 	for i, completed := range rs.Completed {
 		if completed {
 			completedCount++
