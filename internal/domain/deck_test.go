@@ -3,7 +3,6 @@ package domain
 
 import (
 	"path/filepath"
-	"runtime"
 	"testing"
 )
 
@@ -164,9 +163,8 @@ func TestGetHierarchyPath(t *testing.T) {
 
 			// For Windows, use the right separator pattern
 			expected := tc.expected
-			if runtime.GOOS == "windows" {
-				// No change needed for the expected result since we're using "> " as the separator
-			}
+			// No special handling needed for Windows paths here since
+			// we use platform-independent separator in GetHierarchyPath
 
 			// Check result
 			if result != expected {

@@ -146,7 +146,9 @@ func TestGetString(t *testing.T) {
 
 	// Create and set test config
 	testConfig := createTestConfig()
-	configSvc.SetConfig(testConfig)
+	if err := configSvc.SetConfig(testConfig); err != nil {
+		t.Fatalf("SetConfig() error = %v", err)
+	}
 
 	// Test cases
 	testCases := []struct {
@@ -178,7 +180,9 @@ func TestGetInt(t *testing.T) {
 
 	// Create and set test config
 	testConfig := createTestConfig()
-	configSvc.SetConfig(testConfig)
+	if err := configSvc.SetConfig(testConfig); err != nil {
+		t.Fatalf("SetConfig() error = %v", err)
+	}
 
 	// Test cases
 	testCases := []struct {
@@ -209,7 +213,9 @@ func TestGetBool(t *testing.T) {
 
 	// Create and set test config
 	testConfig := createTestConfig()
-	configSvc.SetConfig(testConfig)
+	if err := configSvc.SetConfig(testConfig); err != nil {
+		t.Fatalf("SetConfig() error = %v", err)
+	}
 
 	// Test ShowLineNumbers (should be false in test config)
 	result := configSvc.GetBool("ShowLineNumbers", true)
@@ -232,7 +238,9 @@ func TestGetFloat(t *testing.T) {
 
 	// Create and set test config
 	testConfig := createTestConfig()
-	configSvc.SetConfig(testConfig)
+	if err := configSvc.SetConfig(testConfig); err != nil {
+		t.Fatalf("SetConfig() error = %v", err)
+	}
 
 	// Test cases
 	testCases := []struct {
@@ -293,7 +301,9 @@ func TestResetToDefaults(t *testing.T) {
 
 	// Create and set non-default config
 	testConfig := createTestConfig()
-	configSvc.SetConfig(testConfig)
+	if err := configSvc.SetConfig(testConfig); err != nil {
+		t.Fatalf("SetConfig() error = %v", err)
+	}
 
 	// Reset to defaults
 	err := configSvc.ResetToDefaults()
