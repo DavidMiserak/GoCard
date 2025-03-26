@@ -98,8 +98,19 @@ func (sm2 *SM2Algorithm) IsDue(card domain.Card) bool {
 		return true
 	}
 
+	// Calculate due date and compare with today's date (ignoring time)
 	dueDate := card.LastReviewed.AddDate(0, 0, card.ReviewInterval)
-	return time.Now().After(dueDate)
+	now := time.Now()
+
+	// Compare only the date components
+	dueYear, dueMonth, dueDay := dueDate.Date()
+	nowYear, nowMonth, nowDay := now.Date()
+
+	dueDate = time.Date(dueYear, dueMonth, dueDay, 0, 0, 0, 0, dueDate.Location())
+	now = time.Date(nowYear, nowMonth, nowDay, 0, 0, 0, 0, now.Location())
+
+	// Card is due if today is on or after the due date
+	return now.After(dueDate) || now.Equal(dueDate)
 }
 
 // GetDueDate calculates when the card will be due next
@@ -107,7 +118,12 @@ func (sm2 *SM2Algorithm) GetDueDate(card domain.Card) time.Time {
 	if card.LastReviewed.IsZero() {
 		return time.Now()
 	}
-	return card.LastReviewed.AddDate(0, 0, card.ReviewInterval)
+
+	// Normalize to midnight to ensure consistent date calculations
+	year, month, day := card.LastReviewed.Date()
+	lastReviewed := time.Date(year, month, day, 0, 0, 0, 0, card.LastReviewed.Location())
+
+	return lastReviewed.AddDate(0, 0, card.ReviewInterval)
 }
 
 // CalculateEaseFactor calculates the ease factor (1.3 - 2.5) based on the difficulty rating

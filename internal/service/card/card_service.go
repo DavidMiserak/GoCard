@@ -64,7 +64,27 @@ func (cs *DefaultCardService) IsDue(cardPath string) bool {
 	if err != nil {
 		return false
 	}
-	return cs.algorithm.IsDue(card)
+
+	// Direct implementation instead of delegating to algorithm
+	// This ensures consistency with our fixes
+	if card.LastReviewed.IsZero() {
+		// Card has never been reviewed - it's always due
+		return true
+	}
+
+	// Calculate due date and compare with today
+	dueDate := card.LastReviewed.AddDate(0, 0, card.ReviewInterval)
+	now := time.Now()
+
+	// Compare dates only (ignoring time components)
+	dueYear, dueMonth, dueDay := dueDate.Date()
+	nowYear, nowMonth, nowDay := now.Date()
+
+	dueDate = time.Date(dueYear, dueMonth, dueDay, 0, 0, 0, 0, dueDate.Location())
+	now = time.Date(nowYear, nowMonth, nowDay, 0, 0, 0, 0, now.Location())
+
+	// Card is due if today is on or after the due date
+	return now.After(dueDate) || now.Equal(dueDate)
 }
 
 // GetDueDate returns the next due date for a card
@@ -73,7 +93,13 @@ func (cs *DefaultCardService) GetDueDate(cardPath string) time.Time {
 	if err != nil {
 		return time.Time{} // Return zero time if card can't be loaded
 	}
-	return cs.algorithm.GetDueDate(card)
+
+	if card.LastReviewed.IsZero() {
+		return time.Now() // For never-reviewed cards, return current time
+	}
+
+	// Calculate due date directly from the card's data
+	return card.LastReviewed.AddDate(0, 0, card.ReviewInterval)
 }
 
 // Ensure DefaultCardService implements CardService
