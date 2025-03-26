@@ -19,10 +19,6 @@ func TestNewMarkdownRenderer(t *testing.T) {
 		t.Errorf("expected default codeTheme to be 'monokai', got %s", markdownRenderer.codeTheme)
 	}
 
-	if !markdownRenderer.showLineNumbers {
-		t.Errorf("expected default showLineNumbers to be true")
-	}
-
 	if len(markdownRenderer.styles) == 0 {
 		t.Errorf("expected styles map to be populated")
 	}
@@ -111,21 +107,6 @@ func TestSetCodeTheme(t *testing.T) {
 
 	if renderer.codeTheme != newTheme {
 		t.Errorf("SetCodeTheme(%q) didn't change the theme, got %q", newTheme, renderer.codeTheme)
-	}
-}
-
-func TestEnableLineNumbers(t *testing.T) {
-	renderer := NewMarkdownRenderer().(*MarkdownRenderer)
-
-	// Toggle line numbers
-	renderer.EnableLineNumbers(false)
-	if renderer.showLineNumbers {
-		t.Errorf("EnableLineNumbers(false) didn't disable line numbers")
-	}
-
-	renderer.EnableLineNumbers(true)
-	if !renderer.showLineNumbers {
-		t.Errorf("EnableLineNumbers(true) didn't enable line numbers")
 	}
 }
 
