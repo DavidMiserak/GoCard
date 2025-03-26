@@ -306,8 +306,20 @@ func TestGetNextCard(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error getting next card: %v", err)
 	}
-	if card.FilePath != "card1.md" {
-		t.Errorf("expected first card to be card1.md, got %s", card.FilePath)
+
+	// Verify we got a valid card, but don't check exact file path since they're shuffled
+	if card.FilePath == "" {
+		t.Error("expected a valid card, got empty filepath")
+	}
+
+	// Verify it's one of our expected cards
+	validPaths := map[string]bool{
+		"card1.md": true,
+		"card2.md": true,
+	}
+
+	if !validPaths[card.FilePath] {
+		t.Errorf("expected card path to be either card1.md or card2.md, got %s", card.FilePath)
 	}
 }
 
