@@ -384,9 +384,10 @@ func (fs *FileSystemStorage) SearchCards(query string) ([]domain.Card, error) {
 		return nil, errors.New("search query cannot be empty")
 	}
 
-	query = strings.ToLower(query)
-	var matchingCards []domain.Card
+	// Tokenize the query into individual words
+	queryTokens := strings.Fields(strings.ToLower(query))
 
+	var matchingCards []domain.Card
 	err := filepath.Walk(fs.rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -397,10 +398,24 @@ func (fs *FileSystemStorage) SearchCards(query string) ([]domain.Card, error) {
 				return nil // Skip this card but continue
 			}
 
-			// Check if query matches title, question, or answer
-			if strings.Contains(strings.ToLower(card.Title), query) ||
-				strings.Contains(strings.ToLower(card.Question), query) ||
-				strings.Contains(strings.ToLower(card.Answer), query) {
+			// Combine searchable text
+			searchText := strings.ToLower(
+				card.Title + " " +
+					strings.Join(card.Tags, " ") + " " +
+					card.Question + " " +
+					card.Answer,
+			)
+
+			// Check if ALL query tokens are present in the search text
+			matches := true
+			for _, token := range queryTokens {
+				if !strings.Contains(searchText, token) {
+					matches = false
+					break
+				}
+			}
+
+			if matches {
 				matchingCards = append(matchingCards, card)
 			}
 		}
