@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -97,23 +98,27 @@ func (fs *FileSystemStorage) LoadCard(filePath string) (domain.Card, error) {
 		card.Title = strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
 	}
 
-	// Extract tags
-	if tags, ok := frontmatter["tags"].([]interface{}); ok {
+	// Extract tags - handle array format
+	switch tags := frontmatter["tags"].(type) {
+	case []interface{}:
+		// Standard YAML list format
 		for _, tag := range tags {
 			if tagStr, ok := tag.(string); ok {
 				card.Tags = append(card.Tags, tagStr)
 			}
 		}
+	case string:
+		// Array format tags: [tag1,tag2,tag3]
+		// Strip brackets and split by comma
+		tagsStr := strings.Trim(tags, "[]")
+		tagsList := strings.Split(tagsStr, ",")
+		for _, tag := range tagsList {
+			card.Tags = append(card.Tags, strings.TrimSpace(tag))
+		}
 	}
 
 	// Parse markdown content for question and answer
-	parts := strings.Split(string(markdown), "---")
-	if len(parts) >= 1 {
-		card.Question = strings.TrimSpace(parts[0])
-	}
-	if len(parts) >= 2 {
-		card.Answer = strings.TrimSpace(parts[1])
-	}
+	card.Question, card.Answer = parseQuestionAnswer(string(markdown))
 
 	// Extract review metadata
 	if created, ok := frontmatter["created"].(string); ok {
@@ -187,6 +192,39 @@ func (fs *FileSystemStorage) LoadCard(filePath string) (domain.Card, error) {
 	fs.cardCache[filePath] = *card
 
 	return *card, nil
+}
+
+// parseQuestionAnswer extracts question and answer from markdown with ## Question and ## Answer sections
+func parseQuestionAnswer(content string) (question string, answer string) {
+	// Extract Question and Answer sections
+	questionRegex := regexp.MustCompile(`(?i)## *Question\s*\n([\s\S]*?)(?:## *Answer|\z)`)
+	answerRegex := regexp.MustCompile(`(?i)## *Answer\s*\n([\s\S]*)`)
+
+	questionMatch := questionRegex.FindStringSubmatch(content)
+	answerMatch := answerRegex.FindStringSubmatch(content)
+
+	// Default values
+	question = ""
+	answer = ""
+
+	// Extract question if found
+	if len(questionMatch) > 1 {
+		question = strings.TrimSpace(questionMatch[1])
+	} else {
+		// If no explicit Question section, use the content up to first heading as question
+		firstHeadingRegex := regexp.MustCompile(`([\s\S]*?)(?:##|\z)`)
+		firstContentMatch := firstHeadingRegex.FindStringSubmatch(content)
+		if len(firstContentMatch) > 1 {
+			question = strings.TrimSpace(firstContentMatch[1])
+		}
+	}
+
+	// Extract answer if found
+	if len(answerMatch) > 1 {
+		answer = strings.TrimSpace(answerMatch[1])
+	}
+
+	return question, answer
 }
 
 // UpdateCardMetadata updates the frontmatter in a card file
