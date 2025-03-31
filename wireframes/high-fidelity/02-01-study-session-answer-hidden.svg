@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400">
+  <!-- Terminal window background -->
+  <rect width="600" height="400" fill="#1E1E1E" rx="3" ry="3"/>
+
+  <!-- Terminal content area -->
+  <rect x="10" y="10" width="580" height="380" fill="#2D2D2D" rx="2" ry="2"/>
+
+  <!-- Header information -->
+  <text x="30" y="40" fill="#FFFFFF" font-family="monospace" font-size="16">Studying: Go Programming</text>
+  <text x="500" y="40" fill="#888888" font-family="monospace" font-size="14">Card 7/42</text>
+
+  <!-- Card progress bar -->
+  <rect x="30" y="55" width="540" height="6" fill="#444444" rx="2" ry="2"/>
+  <rect x="30" y="55" width="90" height="6" fill="#4A90E2" rx="2" ry="2"/>
+
+  <!-- Question area -->
+  <rect x="30" y="80" width="540" height="170" fill="#383838" rx="3" ry="3"/>
+  <text x="50" y="110" fill="#FFFFFF" font-family="monospace" font-size="16">What is the purpose of the "defer" keyword in Go?</text>
+
+  <!-- Answer hidden area -->
+  <rect x="30" y="270" width="540" height="60" fill="#383838" rx="3" ry="3" stroke="#444444" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="300" y="305" fill="#888888" font-family="monospace" font-size="16" text-anchor="middle">Press SPACE to reveal answer</text>
+
+  <!-- Help text at bottom -->
+  <text x="20" y="370" fill="#888888" font-family="monospace" font-size="12">SPACE: Show Answer</text>
+  <text x="200" y="370" fill="#888888" font-family="monospace" font-size="12">→: Skip</text>
+  <text x="300" y="370" fill="#888888" font-family="monospace" font-size="12">b: Back to Decks</text>
+  <text x="450" y="370" fill="#888888" font-family="monospace" font-size="12">q: Quit</text>
+</svg>
