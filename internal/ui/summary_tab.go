@@ -123,7 +123,7 @@ func getCardsStudiedPerDay(store *data.Store) map[string]int {
 			}
 
 			// Check if the review was within the last 6 days
-			dayDiff := int(time.Now().Sub(card.LastReviewed).Hours() / 24)
+			dayDiff := int(time.Since(card.LastReviewed).Hours() / 24)
 			if dayDiff <= 5 {
 				dateStr := card.LastReviewed.Format("Jan 2")
 				result[dateStr]++

@@ -3,8 +3,10 @@
 package data
 
 import (
-	"github.com/DavidMiserak/GoCard/internal/model"
 	"time"
+
+	"github.com/DavidMiserak/GoCard/internal/model"
+	"github.com/DavidMiserak/GoCard/internal/srs"
 )
 
 // Store manages all data for the application
@@ -72,4 +74,47 @@ func (s *Store) GetDueCardsForDeck(deckID string) []model.Card {
 	}
 
 	return dueCards
+}
+
+// UpdateCard updates a card in the store and returns whether it was found
+func (s *Store) UpdateCard(updatedCard model.Card) bool {
+	// Find and update the card in its deck
+	for i, deck := range s.Decks {
+		if deck.ID == updatedCard.DeckID {
+			for j, card := range deck.Cards {
+				if card.ID == updatedCard.ID {
+					// Update the card
+					s.Decks[i].Cards[j] = updatedCard
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// UpdateDeckLastStudied updates the LastStudied timestamp for a deck
+func (s *Store) UpdateDeckLastStudied(deckID string) bool {
+	for i, deck := range s.Decks {
+		if deck.ID == deckID {
+			s.Decks[i].LastStudied = time.Now()
+			return true
+		}
+	}
+	return false
+}
+
+// SaveCardReview updates a card with its new review data and updates
+// the parent deck's LastStudied timestamp
+func (s *Store) SaveCardReview(card model.Card, rating int) bool {
+	// Use the SRS algorithm to schedule the card
+	updatedCard := srs.ScheduleCard(card, rating)
+
+	// Update the card in the store
+	cardUpdated := s.UpdateCard(updatedCard)
+
+	// Update the deck's last studied timestamp
+	deckUpdated := s.UpdateDeckLastStudied(card.DeckID)
+
+	return cardUpdated && deckUpdated
 }

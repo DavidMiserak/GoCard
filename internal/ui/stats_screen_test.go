@@ -92,7 +92,7 @@ func TestStatisticsScreenUpdate(t *testing.T) {
 	}
 
 	// Test cycling back to 0
-	model, cmd = updatedScreen.Update(tea.KeyMsg{Type: tea.KeyTab})
+	model, _ = updatedScreen.Update(tea.KeyMsg{Type: tea.KeyTab})
 	updatedScreen = model.(*StatisticsScreen)
 
 	if updatedScreen.activeTab != 0 {
@@ -100,7 +100,7 @@ func TestStatisticsScreenUpdate(t *testing.T) {
 	}
 
 	// Test back to main menu
-	model, cmd = updatedScreen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}})
+	model, _ = updatedScreen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}})
 	_, ok := model.(*MainMenu)
 	if !ok {
 		t.Errorf("Expected model to be *MainMenu after 'b' key, got %T", model)
@@ -109,7 +109,7 @@ func TestStatisticsScreenUpdate(t *testing.T) {
 	// Test window size update
 	width, height := 80, 24
 	statsScreen = NewStatisticsScreen(store) // Reset stats screen
-	model, cmd = statsScreen.Update(tea.WindowSizeMsg{Width: width, Height: height})
+	model, _ = statsScreen.Update(tea.WindowSizeMsg{Width: width, Height: height})
 	updatedScreen = model.(*StatisticsScreen)
 
 	if updatedScreen.width != width {

@@ -133,7 +133,7 @@ func generateForecastData(store *data.Store, days int) []ForecastDay {
 			}
 
 			// Calculate days from now
-			daysFromNow := int(card.NextReview.Sub(time.Now()).Hours() / 24)
+			daysFromNow := int(time.Until(card.NextReview).Hours() / 24)
 
 			// If due within our forecast window
 			if daysFromNow >= 0 && daysFromNow < days {

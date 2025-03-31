@@ -153,10 +153,27 @@ func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if msg.Type == tea.KeyRunes && len(msg.Runes) == 1 {
 				r := msg.Runes[0]
 				if r >= '1' && r <= '5' {
+					// Convert rune to integer rating (1-5)
+					rating := int(r - '0')
+
+					// Get the current card
+					currentCard := s.cards[s.cardIndex]
+
+					// Save the card review with the given rating
+					success := s.store.SaveCardReview(currentCard, rating)
+
+					// If the update was successful, update our local cards array
+					// to reflect the changes (important for the UI to show correct data)
+					if success {
+						updatedDeck, _ := s.store.GetDeck(s.deckID)
+						s.deck = updatedDeck
+						s.cards = updatedDeck.Cards
+					}
+
 					// Mark the current card as studied
 					s.studiedCards[s.cardIndex] = true
 
-					// Apply rating and move to next card
+					// Move to the next card
 					s.nextCard()
 				}
 			}
