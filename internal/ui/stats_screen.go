@@ -101,8 +101,9 @@ func (s *StatisticsScreen) View() string {
 	case 0:
 		sb.WriteString(renderSummaryStats(s.store))
 	case 1:
-		// If we have a specific deck ID, we could potentially render deck-specific stats
-		sb.WriteString(renderDeckReviewStats(s.store))
+		// Pass the lastDeckID to the Deck Review tab
+		// This ensures the specific deck is shown if available
+		sb.WriteString(renderDeckReviewStats(s.store, s.lastDeckID))
 	case 2:
 		sb.WriteString(renderReviewForecastStats(s.store))
 	}

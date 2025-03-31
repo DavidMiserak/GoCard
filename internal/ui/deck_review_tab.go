@@ -8,31 +8,47 @@ import (
 	"time"
 
 	"github.com/DavidMiserak/GoCard/internal/data"
+	"github.com/DavidMiserak/GoCard/internal/model"
 	"github.com/charmbracelet/lipgloss"
 )
 
-// renderDeckReviewStats renders the Deck Review tab statistics
-func renderDeckReviewStats(store *data.Store) string {
+// renderDeckReviewStats renders the Deck Review tab statistics for a specific deck
+func renderDeckReviewStats(store *data.Store, focusDeckID string) string {
 	var sb strings.Builder
+	var deckID string
 
-	// Get stats data
-	totalCards := getTotalCards(store)
-	matureCards := getMatureCards(store)
-	newCards := totalCards - matureCards
-	successRate := calculateSuccessRate(store)
-	avgInterval := calculateAverageInterval(store)
-	lastStudied := getLastStudiedDate(store)
-	ratingDistribution := calculateRatingDistribution(store)
-
-	// Get the last studied deck name
-	lastStudiedDeckName := getLastStudiedDeckName(store)
-
-	// Show the deck name if available
-	if lastStudiedDeckName != "" {
-		deckTitle := fmt.Sprintf("Deck: %s", lastStudiedDeckName)
-		sb.WriteString(statLabelStyle.Bold(true).Render(deckTitle))
-		sb.WriteString("\n\n")
+	// First priority: use the focusDeckID if provided
+	if focusDeckID != "" {
+		deckID = focusDeckID
+	} else {
+		// Second priority: fall back to most recently studied deck
+		deckID = getLastStudiedDeckID(store)
 	}
+
+	// If no deck is found, display message
+	if deckID == "" {
+		return "No deck available to show statistics."
+	}
+
+	// Find the deck
+	deck, found := store.GetDeck(deckID)
+	if !found {
+		return "Selected deck not found."
+	}
+
+	// Display deck name
+	deckTitle := fmt.Sprintf("Deck: %s", deck.Name)
+	sb.WriteString(statLabelStyle.Bold(true).Render(deckTitle))
+	sb.WriteString("\n\n")
+
+	// Get deck-specific stats data
+	totalCards := len(deck.Cards)
+	matureCards := getDeckMatureCards(deck)
+	newCards := totalCards - matureCards
+	successRate := calculateDeckSuccessRate(deck)
+	avgInterval := calculateDeckAverageInterval(deck)
+	lastStudied := deck.LastStudied
+	ratingDistribution := calculateDeckRatingDistribution(deck)
 
 	// Layout the stats in two columns
 	leftWidth := 20
@@ -73,98 +89,6 @@ func renderDeckReviewStats(store *data.Store) string {
 	return sb.String()
 }
 
-// getLastStudiedDeckName returns the name of the most recently studied deck
-func getLastStudiedDeckName(store *data.Store) string {
-	var lastDate time.Time
-	var lastDeckName string
-
-	for _, deck := range store.GetDecks() {
-		if deck.LastStudied.After(lastDate) {
-			lastDate = deck.LastStudied
-			lastDeckName = deck.Name
-		}
-	}
-
-	return lastDeckName
-}
-
-// getMatureCards returns the number of cards with interval >= 21 days
-func getMatureCards(store *data.Store) int {
-	count := 0
-	for _, deck := range store.GetDecks() {
-		for _, card := range deck.Cards {
-			if card.Interval >= 21 {
-				count++
-			}
-		}
-	}
-	return count
-}
-
-// calculateSuccessRate calculates the percentage of reviews rated 3, 4, or 5
-func calculateSuccessRate(store *data.Store) int {
-	var totalReviewed, successful int
-
-	// Get reviews from the last 30 days
-	thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
-
-	for _, deck := range store.GetDecks() {
-		for _, card := range deck.Cards {
-			if !card.LastReviewed.IsZero() && card.LastReviewed.After(thirtyDaysAgo) {
-				totalReviewed++
-				if card.Rating >= 3 {
-					successful++
-				}
-			}
-		}
-	}
-
-	if totalReviewed == 0 {
-		return 0
-	}
-
-	return int((float64(successful) / float64(totalReviewed)) * 100)
-}
-
-// calculateAverageInterval calculates the average interval for all reviewed cards
-func calculateAverageInterval(store *data.Store) float64 {
-	var totalCards, totalInterval int
-
-	for _, deck := range store.GetDecks() {
-		for _, card := range deck.Cards {
-			if !card.LastReviewed.IsZero() && card.Interval > 0 {
-				totalCards++
-				totalInterval += card.Interval
-			}
-		}
-	}
-
-	if totalCards == 0 {
-		return 0
-	}
-
-	return float64(totalInterval) / float64(totalCards)
-}
-
-// getLastStudiedDate returns the most recent study date
-func getLastStudiedDate(store *data.Store) time.Time {
-	var lastDate time.Time
-
-	for _, deck := range store.GetDecks() {
-		if deck.LastStudied.After(lastDate) {
-			lastDate = deck.LastStudied
-		}
-
-		for _, card := range deck.Cards {
-			if card.LastReviewed.After(lastDate) {
-				lastDate = card.LastReviewed
-			}
-		}
-	}
-
-	return lastDate
-}
-
 // formatLastStudied formats the last studied date
 func formatLastStudied(lastDate time.Time) string {
 	if lastDate.IsZero() {
@@ -184,8 +108,75 @@ func formatLastStudied(lastDate time.Time) string {
 	}
 }
 
-// calculateRatingDistribution calculates the distribution of ratings (1-5)
-func calculateRatingDistribution(store *data.Store) map[int]int {
+// getLastStudiedDeckID returns the ID of the most recently studied deck
+func getLastStudiedDeckID(store *data.Store) string {
+	var lastDate time.Time
+	var lastDeckID string
+
+	for _, deck := range store.GetDecks() {
+		if deck.LastStudied.After(lastDate) {
+			lastDate = deck.LastStudied
+			lastDeckID = deck.ID
+		}
+	}
+
+	return lastDeckID
+}
+
+// getDeckMatureCards returns the number of cards with interval >= 21 days for a specific deck
+func getDeckMatureCards(deck model.Deck) int {
+	count := 0
+	for _, card := range deck.Cards {
+		if card.Interval >= 21 {
+			count++
+		}
+	}
+	return count
+}
+
+// calculateDeckSuccessRate calculates the percentage of reviews rated 3, 4, or 5 for a specific deck
+func calculateDeckSuccessRate(deck model.Deck) int {
+	var totalReviewed, successful int
+
+	// Get reviews from the last 30 days
+	thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
+
+	for _, card := range deck.Cards {
+		if !card.LastReviewed.IsZero() && card.LastReviewed.After(thirtyDaysAgo) {
+			totalReviewed++
+			if card.Rating >= 3 {
+				successful++
+			}
+		}
+	}
+
+	if totalReviewed == 0 {
+		return 0
+	}
+
+	return int((float64(successful) / float64(totalReviewed)) * 100)
+}
+
+// calculateDeckAverageInterval calculates the average interval for all reviewed cards in a specific deck
+func calculateDeckAverageInterval(deck model.Deck) float64 {
+	var totalCards, totalInterval int
+
+	for _, card := range deck.Cards {
+		if !card.LastReviewed.IsZero() && card.Interval > 0 {
+			totalCards++
+			totalInterval += card.Interval
+		}
+	}
+
+	if totalCards == 0 {
+		return 0
+	}
+
+	return float64(totalInterval) / float64(totalCards)
+}
+
+// calculateDeckRatingDistribution calculates the distribution of ratings (1-5) for a specific deck
+func calculateDeckRatingDistribution(deck model.Deck) map[int]int {
 	// Initialize the ratings map
 	distribution := make(map[int]int)
 	for i := 1; i <= 5; i++ {
@@ -195,11 +186,9 @@ func calculateRatingDistribution(store *data.Store) map[int]int {
 	// Get ratings from the last 30 days
 	thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
 
-	for _, deck := range store.GetDecks() {
-		for _, card := range deck.Cards {
-			if !card.LastReviewed.IsZero() && card.LastReviewed.After(thirtyDaysAgo) && card.Rating >= 1 && card.Rating <= 5 {
-				distribution[card.Rating]++
-			}
+	for _, card := range deck.Cards {
+		if !card.LastReviewed.IsZero() && card.LastReviewed.After(thirtyDaysAgo) && card.Rating >= 1 && card.Rating <= 5 {
+			distribution[card.Rating]++
 		}
 	}
 
