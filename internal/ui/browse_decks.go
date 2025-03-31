@@ -8,7 +8,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 
 	"github.com/DavidMiserak/GoCard/internal/data"
 	"github.com/DavidMiserak/GoCard/internal/model"
@@ -60,24 +59,6 @@ var browseKeys = browseKeyMap{
 		key.WithHelp("q", "quit"),
 	),
 }
-
-var (
-	headerStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFFFF")).
-			Bold(true)
-
-	selectedRowStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#00FF00"))
-
-	normalRowStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFFFF"))
-
-	paginationStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#999999"))
-
-	browseHelpStyle = lipgloss.NewStyle(). // Changed from helpStyle to browseHelpStyle
-			Foreground(lipgloss.Color("#999999"))
-)
 
 // BrowseScreen represents the browse decks screen
 type BrowseScreen struct {

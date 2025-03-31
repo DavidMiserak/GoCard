@@ -8,7 +8,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 
 	"github.com/DavidMiserak/GoCard/internal/data"
 	"github.com/DavidMiserak/GoCard/internal/model"
@@ -65,83 +64,6 @@ var studyKeys = studyKeyMap{
 		key.WithHelp("5", "Easy"),
 	),
 }
-
-// Styles for the study screen
-var (
-	studyTitleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFFFF")).
-			Bold(true)
-
-	cardCountStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#888888"))
-
-	questionStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFFFF")).
-			PaddingLeft(4).
-			PaddingRight(4).
-			PaddingTop(2).
-			PaddingBottom(2).
-			Width(50).
-			Align(lipgloss.Left)
-
-	answerStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#CCCCCC")).
-			PaddingLeft(4).
-			PaddingRight(4).
-			PaddingTop(2).
-			PaddingBottom(2).
-			Width(50).
-			Align(lipgloss.Left)
-
-	revealPromptStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#888888")).
-				Border(lipgloss.NormalBorder()).
-				BorderForeground(lipgloss.Color("#444444")).
-				PaddingLeft(2).
-				PaddingRight(2).
-				PaddingTop(1).
-				PaddingBottom(1).
-				Align(lipgloss.Center)
-
-	ratingBlackoutStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#FFFFFF")).
-				Background(lipgloss.Color("#9C27B0")).
-				PaddingLeft(1).
-				PaddingRight(1)
-
-	ratingWrongStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#FFFFFF")).
-				Background(lipgloss.Color("#F44336")).
-				PaddingLeft(1).
-				PaddingRight(1)
-
-	ratingHardStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFFFF")).
-			Background(lipgloss.Color("#FF9800")).
-			PaddingLeft(1).
-			PaddingRight(1)
-
-	ratingGoodStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFFFF")).
-			Background(lipgloss.Color("#FFC107")).
-			PaddingLeft(1).
-			PaddingRight(1)
-
-	ratingEasyStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFFFF")).
-			Background(lipgloss.Color("#4CAF50")).
-			PaddingLeft(1).
-			PaddingRight(1)
-
-	studyHelpStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#888888"))
-
-	progressBarEmptyStyle = lipgloss.NewStyle().
-				Background(lipgloss.Color("#444444"))
-
-	progressBarFilledStyle = lipgloss.NewStyle().
-				Background(lipgloss.Color("#2196F3"))
-)
 
 // StudyState represents the current state of the study screen
 type StudyState int

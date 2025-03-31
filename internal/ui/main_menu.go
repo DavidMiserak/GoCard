@@ -5,32 +5,8 @@ package ui
 import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 
 	"github.com/DavidMiserak/GoCard/internal/data"
-)
-
-// Define styles
-var (
-	titleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFFFF")).
-			Bold(true).
-			Align(lipgloss.Center).
-			Padding(1, 0, 0, 0)
-
-	subtitleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#888888")).
-			Align(lipgloss.Center).
-			Padding(0, 0, 1, 0)
-
-	selectedItemStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#00FF00"))
-
-	itemStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFFFF"))
-
-	helpStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#888888"))
 )
 
 // Define key mappings
@@ -143,7 +119,7 @@ func (m MainMenu) View() string {
 		if i == m.cursor {
 			s += selectedItemStyle.Render("> " + item)
 		} else {
-			s += itemStyle.Render("  " + item)
+			s += normalItemStyle.Render("  " + item)
 		}
 		s += "\n"
 	}
