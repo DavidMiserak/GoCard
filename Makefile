@@ -14,6 +14,7 @@ pre-commit-setup:
 	pre-commit run --all-files
 
 GoCard:
+	go fmt ./...
 	CGO_ENABLED=0 go build -o GoCard ./cmd/gocard
 
 .PHONY: format
@@ -26,6 +27,7 @@ lint:
 
 .PHONY: test
 test:
+	go fmt ./...
 	go test -timeout 3m -race ./... | tee test.log
 
 .PHONY: test-cover

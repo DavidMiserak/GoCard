@@ -205,11 +205,11 @@ func renderRatingsDistribution(distribution map[int]int) string {
 	}
 
 	ratingStyles := map[int]lipgloss.Style{
-		1: ratingBlackoutStyle,
-		2: ratingWrongStyle,
-		3: ratingHardStyle,
-		4: ratingGoodStyle,
-		5: ratingEasyStyle,
+		1: lipgloss.NewStyle().Foreground(ratingBlackoutColor),
+		2: lipgloss.NewStyle().Foreground(ratingWrongColor),
+		3: lipgloss.NewStyle().Foreground(ratingHardColor),
+		4: lipgloss.NewStyle().Foreground(ratingGoodColor),
+		5: lipgloss.NewStyle().Foreground(ratingEasyColor),
 	}
 
 	// Max width for the bars

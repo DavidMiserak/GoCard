@@ -118,34 +118,41 @@ var (
 	studyHelpStyle = lipgloss.NewStyle().
 			Foreground(colorLightGray)
 
+	// Rating Colors
+	ratingBlackoutColor = lipgloss.Color("#9C27B0")
+	ratingWrongColor    = lipgloss.Color("#F44336")
+	ratingHardColor     = lipgloss.Color("#FF9800")
+	ratingGoodColor     = lipgloss.Color("#FFC107")
+	ratingEasyColor     = lipgloss.Color("#4CAF50")
+
 	// Rating Styles
 	ratingBlackoutStyle = lipgloss.NewStyle().
 				Foreground(colorWhite).
-				Background(lipgloss.Color("#9C27B0")).
+				Background(ratingBlackoutColor).
 				PaddingLeft(1).
 				PaddingRight(1)
 
 	ratingWrongStyle = lipgloss.NewStyle().
 				Foreground(colorWhite).
-				Background(lipgloss.Color("#F44336")).
+				Background(ratingWrongColor).
 				PaddingLeft(1).
 				PaddingRight(1)
 
 	ratingHardStyle = lipgloss.NewStyle().
 			Foreground(colorWhite).
-			Background(lipgloss.Color("#FF9800")).
+			Background(ratingHardColor).
 			PaddingLeft(1).
 			PaddingRight(1)
 
 	ratingGoodStyle = lipgloss.NewStyle().
 			Foreground(colorWhite).
-			Background(lipgloss.Color("#FFC107")).
+			Background(ratingGoodColor).
 			PaddingLeft(1).
 			PaddingRight(1)
 
 	ratingEasyStyle = lipgloss.NewStyle().
 			Foreground(colorWhite).
-			Background(lipgloss.Color("#4CAF50")).
+			Background(ratingEasyColor).
 			PaddingLeft(1).
 			PaddingRight(1)
 

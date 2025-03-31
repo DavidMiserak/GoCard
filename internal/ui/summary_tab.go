@@ -175,7 +175,7 @@ func renderHorizontalBarChart(data map[string]int, maxBarWidth int) string {
 		// Draw the bar using block characters
 		bar := ""
 		if barWidth > 0 {
-			bar = progressBarFilledStyle.Render(strings.Repeat("█", barWidth))
+			bar = lipgloss.NewStyle().Foreground(colorBlue).Render(strings.Repeat("█", barWidth))
 		}
 
 		// Combine label and bar
