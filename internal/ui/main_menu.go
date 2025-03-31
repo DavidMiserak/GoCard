@@ -115,8 +115,8 @@ func (m MainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return NewBrowseScreen(data.NewStore()), nil
 
 			case 2: // Statistics
-				// TODO: Navigate to statistics screen
-				return m, nil
+				// Navigate to statistics screen
+				return NewStatisticsScreen(data.NewStore()), nil
 
 			case 3: // Quit
 				return m, tea.Quit

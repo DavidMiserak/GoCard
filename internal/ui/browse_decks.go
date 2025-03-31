@@ -261,7 +261,7 @@ func isYesterday(t time.Time) bool {
 }
 
 func isWithinDays(t time.Time, days int) bool {
-	return time.Now().Sub(t) < time.Duration(days)*24*time.Hour
+	return time.Since(t).Hours() < float64(days)*24
 }
 
 func daysBetween(a, b time.Time) int {
