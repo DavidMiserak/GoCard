@@ -71,19 +71,21 @@ type StudyState int
 const (
 	ShowingQuestion StudyState = iota
 	ShowingAnswer
+	FinishedStudying
 )
 
 // StudyScreen represents the screen for studying flashcards
 type StudyScreen struct {
-	store      *data.Store
-	deckID     string
-	deck       model.Deck
-	cards      []model.Card
-	cardIndex  int
-	totalCards int
-	state      StudyState
-	width      int
-	height     int
+	store        *data.Store
+	deckID       string
+	deck         model.Deck
+	cards        []model.Card
+	cardIndex    int
+	totalCards   int
+	studiedCards map[int]bool // Track which cards have been studied
+	state        StudyState
+	width        int
+	height       int
 }
 
 // NewStudyScreen creates a new study screen for the specified deck
@@ -100,13 +102,14 @@ func NewStudyScreen(store *data.Store, deckID string) *StudyScreen {
 	cards := deck.Cards
 
 	return &StudyScreen{
-		store:      store,
-		deckID:     deckID,
-		deck:       deck,
-		cards:      cards,
-		cardIndex:  0,
-		totalCards: len(cards),
-		state:      ShowingQuestion,
+		store:        store,
+		deckID:       deckID,
+		deck:         deck,
+		cards:        cards,
+		cardIndex:    0,
+		totalCards:   len(cards),
+		studiedCards: make(map[int]bool), // Initialize the map to track studied cards
+		state:        ShowingQuestion,
 	}
 }
 
@@ -119,6 +122,11 @@ func (s *StudyScreen) Init() tea.Cmd {
 func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// If in finished state, any key navigates to stats screen
+		if s.state == FinishedStudying {
+			return NewStatisticsScreen(s.store), nil
+		}
+
 		// Handle space key explicitly since it's special in Bubble Tea
 		if msg.Type == tea.KeySpace && s.state == ShowingQuestion {
 			s.state = ShowingAnswer
@@ -145,6 +153,9 @@ func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if msg.Type == tea.KeyRunes && len(msg.Runes) == 1 {
 				r := msg.Runes[0]
 				if r >= '1' && r <= '5' {
+					// Mark the current card as studied
+					s.studiedCards[s.cardIndex] = true
+
 					// Apply rating and move to next card
 					s.nextCard()
 				}
@@ -159,11 +170,37 @@ func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, nil
 }
 
-// nextCard advances to the next card, wrapping around if needed
+// nextCard advances to the next card or transitions to FinishedStudying state
+// if all cards have been studied
 func (s *StudyScreen) nextCard() {
-	if s.totalCards > 0 {
-		s.cardIndex = (s.cardIndex + 1) % s.totalCards
+	// Check if we've studied all cards
+	if len(s.studiedCards) >= s.totalCards {
+		s.state = FinishedStudying
+		return
 	}
+
+	// Find the next unstudied card
+	originalIndex := s.cardIndex
+	for {
+		s.cardIndex = (s.cardIndex + 1) % s.totalCards
+
+		// If we've cycled through all cards and returned to our starting point,
+		// it means there are no unstudied cards left
+		if s.cardIndex == originalIndex {
+			// Check if the current card is also studied
+			if s.studiedCards[s.cardIndex] {
+				s.state = FinishedStudying
+				return
+			}
+			break
+		}
+
+		// If this card hasn't been studied yet, break the loop
+		if !s.studiedCards[s.cardIndex] {
+			break
+		}
+	}
+
 	s.state = ShowingQuestion
 }
 
@@ -203,6 +240,16 @@ func (s *StudyScreen) View() string {
 	// Handle edge case: no cards in the deck
 	if s.totalCards <= 0 {
 		return "No cards in this deck. Press 'b' to go back."
+	}
+
+	// Handle when user has finished studying all cards
+	if s.state == FinishedStudying {
+		sb.WriteString(studyTitleStyle.Render("Study Session Complete!"))
+		sb.WriteString("\n\n")
+		sb.WriteString("You've completed all cards in this deck!")
+		sb.WriteString("\n\n")
+		sb.WriteString("Press any key to view your statistics.")
+		return sb.String()
 	}
 
 	// Title and card count
