@@ -148,11 +148,11 @@ func (b BrowseScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, browseKeys.Enter):
 			// Get the selected deck
-			deckIndex := b.page*decksPerPage + b.cursor
+			deckIndex := (b.page * decksPerPage) + b.cursor
 			if deckIndex < len(b.decks) {
 				b.selectedDeck = b.decks[deckIndex].ID
-				// TODO: Navigate to study screen with the selected deck
-				// return NewStudyScreen(b.store, b.selectedDeck), nil
+				// Navigate to study screen with the selected deck
+				return NewStudyScreen(b.store, b.selectedDeck), nil
 			}
 		}
 

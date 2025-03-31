@@ -107,8 +107,8 @@ func (m MainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Handle menu selection
 			switch m.cursor {
 			case 0: // Study
-				// TODO: Navigate to study screen
-				return m, nil
+				// Navigate to study screen
+				return NewBrowseScreen(data.NewStore()), nil
 
 			case 1: // Browse Decks
 				// Navigate to browse decks screen
