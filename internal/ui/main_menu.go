@@ -6,6 +6,8 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/DavidMiserak/GoCard/internal/data"
 )
 
 // Define styles
@@ -41,11 +43,11 @@ type keyMap struct {
 
 var keys = keyMap{
 	Up: key.NewBinding(
-		key.WithKeys("up", "k"),
+		key.WithKeys("up", "k"), // "k" for Vim users
 		key.WithHelp("↑/k", "up"),
 	),
 	Down: key.NewBinding(
-		key.WithKeys("down", "j"),
+		key.WithKeys("down", "j"), // "j" for Vim users
 		key.WithHelp("↓/j", "down"),
 	),
 	Enter: key.NewBinding(
@@ -109,8 +111,8 @@ func (m MainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 
 			case 1: // Browse Decks
-				// TODO: Navigate to browse decks screen
-				return m, nil
+				// Navigate to browse decks screen
+				return NewBrowseScreen(data.NewStore()), nil
 
 			case 2: // Statistics
 				// TODO: Navigate to statistics screen
@@ -147,7 +149,7 @@ func (m MainMenu) View() string {
 	}
 
 	// Help
-	s += "\n" + helpStyle.Render("↑/↓: Navigate    Enter: Select    q: Quit")
+	s += "\n" + helpStyle.Render("↑/↓: Navigate"+"\tEnter: Select"+"\tq: Quit")
 
 	return s
 }
