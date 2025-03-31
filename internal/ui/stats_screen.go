@@ -12,19 +12,31 @@ import (
 
 // StatisticsScreen represents the statistics view
 type StatisticsScreen struct {
-	store     *data.Store
-	width     int
-	height    int
-	activeTab int
-	cardStats []int // Cards studied per day for the last 5 days
+	store      *data.Store
+	width      int
+	height     int
+	activeTab  int
+	cardStats  []int  // Cards studied per day for the last 5 days
+	lastDeckID string // ID of the last deck studied/viewed
 }
 
 // NewStatisticsScreen creates a new statistics screen
 func NewStatisticsScreen(store *data.Store) *StatisticsScreen {
 	return &StatisticsScreen{
-		store:     store,
-		activeTab: 0,
-		cardStats: calculateCardStudiedPerDay(store),
+		store:      store,
+		activeTab:  1, // Default to the Deck Review tab
+		cardStats:  calculateCardStudiedPerDay(store),
+		lastDeckID: "", // Will be set when coming from a study session
+	}
+}
+
+// NewStatisticsScreenWithDeck creates a new statistics screen with a focus on a specific deck
+func NewStatisticsScreenWithDeck(store *data.Store, deckID string) *StatisticsScreen {
+	return &StatisticsScreen{
+		store:      store,
+		activeTab:  1, // Start with the Deck Review tab
+		cardStats:  calculateCardStudiedPerDay(store),
+		lastDeckID: deckID,
 	}
 }
 
@@ -89,6 +101,7 @@ func (s *StatisticsScreen) View() string {
 	case 0:
 		sb.WriteString(renderSummaryStats(s.store))
 	case 1:
+		// If we have a specific deck ID, we could potentially render deck-specific stats
 		sb.WriteString(renderDeckReviewStats(s.store))
 	case 2:
 		sb.WriteString(renderReviewForecastStats(s.store))

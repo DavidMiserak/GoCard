@@ -3,6 +3,7 @@
 package ui
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/DavidMiserak/GoCard/internal/data"
@@ -21,12 +22,45 @@ func TestNewStatisticsScreen(t *testing.T) {
 		t.Errorf("Expected store to be %v, got %v", store, statsScreen.store)
 	}
 
-	if statsScreen.activeTab != 0 {
-		t.Errorf("Expected activeTab to be 0, got %d", statsScreen.activeTab)
+	// Now we expect activeTab to be initialized to 1 (Deck Review tab)
+	if statsScreen.activeTab != 1 {
+		t.Errorf("Expected activeTab to be 1, got %d", statsScreen.activeTab)
 	}
 
 	if len(statsScreen.cardStats) == 0 {
 		t.Error("Expected cardStats to be initialized with data")
+	}
+
+	// Check that lastDeckID is initialized to empty string
+	if statsScreen.lastDeckID != "" {
+		t.Errorf("Expected lastDeckID to be empty, got %s", statsScreen.lastDeckID)
+	}
+}
+
+func TestNewStatisticsScreenWithDeck(t *testing.T) {
+	store := data.NewStore()
+	deckID := "test-deck-id"
+	statsScreen := NewStatisticsScreenWithDeck(store, deckID)
+
+	if statsScreen == nil {
+		t.Fatal("Expected NewStatisticsScreenWithDeck to return a non-nil StatisticsScreen")
+	}
+
+	if statsScreen.store != store {
+		t.Errorf("Expected store to be %v, got %v", store, statsScreen.store)
+	}
+
+	if statsScreen.activeTab != 1 {
+		t.Errorf("Expected activeTab to be 1 (Deck Review tab), got %d", statsScreen.activeTab)
+	}
+
+	if len(statsScreen.cardStats) == 0 {
+		t.Error("Expected cardStats to be initialized with data")
+	}
+
+	// Check that lastDeckID is set to the provided deckID
+	if statsScreen.lastDeckID != deckID {
+		t.Errorf("Expected lastDeckID to be %s, got %s", deckID, statsScreen.lastDeckID)
 	}
 }
 
@@ -45,20 +79,36 @@ func TestStatisticsScreenUpdate(t *testing.T) {
 	store := data.NewStore()
 	statsScreen := NewStatisticsScreen(store)
 
-	// Test tab switching
+	// Since activeTab is now initialized to 1, we expect it to cycle to 2
 	model, cmd := statsScreen.Update(tea.KeyMsg{Type: tea.KeyTab})
 	updatedScreen := model.(*StatisticsScreen)
 
-	if updatedScreen.activeTab != 1 {
-		t.Errorf("Expected activeTab to be 1 after Tab key, got %d", updatedScreen.activeTab)
+	if updatedScreen.activeTab != 2 {
+		t.Errorf("Expected activeTab to be 2 after Tab key, got %d", updatedScreen.activeTab)
 	}
 
 	if cmd != nil {
 		t.Error("Expected cmd to be nil")
 	}
 
+	// Test cycling back to 0
+	model, cmd = updatedScreen.Update(tea.KeyMsg{Type: tea.KeyTab})
+	updatedScreen = model.(*StatisticsScreen)
+
+	if updatedScreen.activeTab != 0 {
+		t.Errorf("Expected activeTab to be 0 after second Tab key, got %d", updatedScreen.activeTab)
+	}
+
+	// Test back to main menu
+	model, cmd = updatedScreen.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}})
+	_, ok := model.(*MainMenu)
+	if !ok {
+		t.Errorf("Expected model to be *MainMenu after 'b' key, got %T", model)
+	}
+
 	// Test window size update
 	width, height := 80, 24
+	statsScreen = NewStatisticsScreen(store) // Reset stats screen
 	model, cmd = statsScreen.Update(tea.WindowSizeMsg{Width: width, Height: height})
 	updatedScreen = model.(*StatisticsScreen)
 
@@ -89,9 +139,51 @@ func TestStatisticsScreenView(t *testing.T) {
 		}
 
 		// Basic check that the view contains help text
-		if tab == 0 && !containsAnyOf(view, []string{"Tab", "Back", "Menu", "Quit"}) {
+		if !containsAnyOf(view, []string{"Tab", "Back", "Menu", "Quit"}) {
 			t.Error("Expected view to contain help text")
 		}
+
+		// Check that the tab headings are present
+		if !containsAnyOf(view, []string{"Summary", "Deck Review", "Review Forecast"}) {
+			t.Error("Expected view to contain tab headings")
+		}
+	}
+}
+
+func TestStatisticsScreenWithDeckView(t *testing.T) {
+	// Create a store with some test data
+	store := data.NewStore()
+
+	// Assuming GetDecks returns at least one deck with an ID and Name
+	decks := store.GetDecks()
+	if len(decks) == 0 {
+		t.Skip("No decks available for testing")
+		return
+	}
+
+	deckID := decks[0].ID
+
+	// Create stats screen with a specific deck
+	statsScreen := NewStatisticsScreenWithDeck(store, deckID)
+
+	// Set screen dimensions
+	statsScreen.width = 80
+	statsScreen.height = 24
+
+	// Make sure we're on the Deck Review tab
+	statsScreen.activeTab = 1
+
+	// Get the view
+	view := statsScreen.View()
+
+	// Check that the view is not empty
+	if view == "" {
+		t.Error("Expected view to return non-empty string")
+	}
+
+	// We should see the Deck Review tab content
+	if !containsAnyOf(view, []string{"Deck Review", "Ratings Distribution"}) {
+		t.Error("Expected view to contain Deck Review content")
 	}
 }
 
@@ -107,8 +199,9 @@ func containsAnyOf(s string, substrings []string) bool {
 
 // Helper function to check if a string contains a substring
 func contains(s, substring string) bool {
-	return s != "" && substring != "" && s != substring && s[0:len(s)-1] != substring &&
-		s[1:len(s)] != substring && s[1:len(s)-1] != substring
+	// This current implementation looks a bit unusual and might not work as expected
+	// Let's use a more straightforward approach
+	return s != "" && substring != "" && s != substring && strings.Contains(s, substring)
 }
 
 // Helper function to create a test store

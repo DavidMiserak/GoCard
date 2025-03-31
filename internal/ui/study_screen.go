@@ -124,7 +124,7 @@ func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		// If in finished state, any key navigates to stats screen
 		if s.state == FinishedStudying {
-			return NewStatisticsScreen(s.store), nil
+			return NewStatisticsScreenWithDeck(s.store, s.deckID), nil
 		}
 
 		// Handle space key explicitly since it's special in Bubble Tea

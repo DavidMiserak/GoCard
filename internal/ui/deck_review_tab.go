@@ -24,6 +24,16 @@ func renderDeckReviewStats(store *data.Store) string {
 	lastStudied := getLastStudiedDate(store)
 	ratingDistribution := calculateRatingDistribution(store)
 
+	// Get the last studied deck name
+	lastStudiedDeckName := getLastStudiedDeckName(store)
+
+	// Show the deck name if available
+	if lastStudiedDeckName != "" {
+		deckTitle := fmt.Sprintf("Deck: %s", lastStudiedDeckName)
+		sb.WriteString(statLabelStyle.Bold(true).Render(deckTitle))
+		sb.WriteString("\n\n")
+	}
+
 	// Layout the stats in two columns
 	leftWidth := 20
 	rightWidth := 20
@@ -61,6 +71,21 @@ func renderDeckReviewStats(store *data.Store) string {
 	sb.WriteString(chart)
 
 	return sb.String()
+}
+
+// getLastStudiedDeckName returns the name of the most recently studied deck
+func getLastStudiedDeckName(store *data.Store) string {
+	var lastDate time.Time
+	var lastDeckName string
+
+	for _, deck := range store.GetDecks() {
+		if deck.LastStudied.After(lastDate) {
+			lastDate = deck.LastStudied
+			lastDeckName = deck.Name
+		}
+	}
+
+	return lastDeckName
 }
 
 // getMatureCards returns the number of cards with interval >= 21 days
