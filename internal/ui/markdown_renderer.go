@@ -3,9 +3,13 @@
 package ui
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
+	"github.com/alecthomas/chroma/v2/formatters"
+	"github.com/alecthomas/chroma/v2/lexers"
+	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/charmbracelet/glamour"
 )
 
@@ -14,18 +18,26 @@ type MarkdownRenderer struct {
 	renderer      *glamour.TermRenderer
 	renderedCache map[string]string
 	defaultWidth  int
+	syntaxTheme   string
 }
 
-// NewMarkdownRenderer creates a new markdown renderer with specified width
-func NewMarkdownRenderer(width int) *MarkdownRenderer {
+// NewMarkdownRenderer creates a new markdown renderer with specified width and theme
+func NewMarkdownRenderer(width int, themeName string) *MarkdownRenderer {
 	// Use default width if not specified
 	if width <= 0 {
 		width = 80
 	}
 
-	// Initialize glamour renderer with explicit style instead of auto-detection
+	// Validate and set theme, fallback to "monokai" if invalid
+	if themeName == "" {
+		themeName = "monokai"
+	}
+
+	themeJson := defaultMarkdownStyleWithChroma(themeName)
+
+	// Initialize glamour renderer with explicit style
 	renderer, _ := glamour.NewTermRenderer(
-		glamour.WithStylesFromJSONBytes(defaultMarkdownStyle()),
+		glamour.WithStylesFromJSONBytes(themeJson),
 		glamour.WithWordWrap(width),
 		glamour.WithEmoji(),
 	)
@@ -34,7 +46,44 @@ func NewMarkdownRenderer(width int) *MarkdownRenderer {
 		renderer:      renderer,
 		renderedCache: make(map[string]string),
 		defaultWidth:  width,
+		syntaxTheme:   themeName,
 	}
+}
+
+// renderCodeBlock uses Chroma to syntax highlight code blocks
+func renderCodeBlock(code, language, themeName string) string {
+	// Determine the lexer based on the language
+	lexer := lexers.Get(language)
+	if lexer == nil {
+		lexer = lexers.Fallback
+	}
+
+	// Use specified theme
+	style := styles.Get(themeName)
+	if style == nil {
+		style = styles.Fallback
+	}
+
+	// Create a terminal formatter
+	formatter := formatters.Get("terminal")
+	if formatter == nil {
+		formatter = formatters.Fallback
+	}
+
+	// Tokenize the code
+	iterator, err := lexer.Tokenise(nil, code)
+	if err != nil {
+		return code // Fallback to original code if tokenization fails
+	}
+
+	// Render the highlighted code
+	var buf bytes.Buffer
+	err = formatter.Format(&buf, style, iterator)
+	if err != nil {
+		return code // Fallback to original code if formatting fails
+	}
+
+	return buf.String()
 }
 
 // UpdateWidth updates the renderer's width and clears the cache
@@ -45,7 +94,7 @@ func (r *MarkdownRenderer) UpdateWidth(width int) {
 
 	// Create a new renderer with the updated width
 	renderer, _ := glamour.NewTermRenderer(
-		glamour.WithStylesFromJSONBytes(defaultMarkdownStyle()),
+		glamour.WithStylesFromJSONBytes(defaultMarkdownStyleWithChroma(r.syntaxTheme)),
 		glamour.WithWordWrap(width),
 		glamour.WithEmoji(),
 	)
@@ -57,10 +106,31 @@ func (r *MarkdownRenderer) UpdateWidth(width int) {
 	r.renderedCache = make(map[string]string)
 }
 
+// SetSyntaxTheme allows changing the syntax highlighting theme
+func (r *MarkdownRenderer) SetSyntaxTheme(themeName string) {
+	// Validate theme
+	if themeName == "" {
+		themeName = "monokai"
+	}
+
+	// Update renderer with new theme
+	renderer, _ := glamour.NewTermRenderer(
+		glamour.WithStylesFromJSONBytes(defaultMarkdownStyleWithChroma(themeName)),
+		glamour.WithWordWrap(r.defaultWidth),
+		glamour.WithEmoji(),
+	)
+
+	r.renderer = renderer
+	r.syntaxTheme = themeName
+
+	// Clear cache to force re-rendering with new theme
+	r.renderedCache = make(map[string]string)
+}
+
 // Render renders markdown text to terminal output
 func (r *MarkdownRenderer) Render(markdown string) string {
-	// Create cache key using content and width to ensure proper rendering after resizes
-	cacheKey := fmt.Sprintf("%s-%d", markdown, r.defaultWidth)
+	// Create cache key using content, width, and theme to ensure proper rendering
+	cacheKey := fmt.Sprintf("%s-%d-%s", markdown, r.defaultWidth, r.syntaxTheme)
 
 	// Check if we already have this content rendered in the cache
 	if rendered, exists := r.renderedCache[cacheKey]; exists {
@@ -93,9 +163,9 @@ func (r *MarkdownRenderer) ClearCache() {
 	r.renderedCache = make(map[string]string)
 }
 
-// defaultMarkdownStyle returns a JSON byte array with the default styling configuration
-func defaultMarkdownStyle() []byte {
-	return []byte(`{
+// defaultMarkdownStyleWithChroma returns a JSON byte array with the default styling configuration
+func defaultMarkdownStyleWithChroma(themeName string) []byte {
+	return []byte(fmt.Sprintf(`{
 		"document": {},
 		"block_quote": {
 			"indent": 1,
@@ -104,6 +174,20 @@ func defaultMarkdownStyle() []byte {
 		"paragraph": {},
 		"list": {
 			"level_indent": 2
+		},
+		"enumerated_list": {
+			"level_1": {
+				"prefix": "1. ",
+				"level_indent": 2
+			},
+			"level_2": {
+				"prefix": "a. ",
+				"level_indent": 4
+			},
+			"level_3": {
+				"prefix": "i. ",
+				"level_indent": 6
+			}
 		},
 		"heading": {
 			"level_1": {
@@ -132,7 +216,8 @@ func defaultMarkdownStyle() []byte {
 			}
 		},
 		"code_block": {
-			"theme": "monokai"
+			"theme": "%s",
+			"custom_renderer": "renderCodeBlock"
 		},
 		"html_block": {},
 		"thematic_break": {
@@ -153,5 +238,5 @@ func defaultMarkdownStyle() []byte {
 			"inline": true,
 			"border": true
 		}
-	}`)
+	}`, themeName))
 }

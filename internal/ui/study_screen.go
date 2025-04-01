@@ -105,7 +105,7 @@ func NewStudyScreen(store *data.Store, deckID string) *StudyScreen {
 	cards := deck.Cards
 
 	// Initialize markdown renderer with default width (will be updated on resize)
-	mdRenderer := NewMarkdownRenderer(80)
+	mdRenderer := NewMarkdownRenderer(80, "solarized-dark")
 
 	// Initialize viewport for answer
 	answerViewport := viewport.New(80, 10)
