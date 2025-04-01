@@ -76,16 +76,17 @@ const (
 
 // StudyScreen represents the screen for studying flashcards
 type StudyScreen struct {
-	store        *data.Store
-	deckID       string
-	deck         model.Deck
-	cards        []model.Card
-	cardIndex    int
-	totalCards   int
-	studiedCards map[int]bool // Track which cards have been studied
-	state        StudyState
-	width        int
-	height       int
+	store            *data.Store
+	deckID           string
+	deck             model.Deck
+	cards            []model.Card
+	cardIndex        int
+	totalCards       int
+	studiedCards     map[int]bool // Track which cards have been studied
+	state            StudyState
+	width            int
+	height           int
+	markdownRenderer *MarkdownRenderer
 }
 
 // NewStudyScreen creates a new study screen for the specified deck
@@ -101,15 +102,19 @@ func NewStudyScreen(store *data.Store, deckID string) *StudyScreen {
 	// Get the cards from the deck
 	cards := deck.Cards
 
+	// Initialize markdown renderer with default width (will be updated on resize)
+	mdRenderer := NewMarkdownRenderer(80)
+
 	return &StudyScreen{
-		store:        store,
-		deckID:       deckID,
-		deck:         deck,
-		cards:        cards,
-		cardIndex:    0,
-		totalCards:   len(cards),
-		studiedCards: make(map[int]bool), // Initialize the map to track studied cards
-		state:        ShowingQuestion,
+		store:            store,
+		deckID:           deckID,
+		deck:             deck,
+		cards:            cards,
+		cardIndex:        0,
+		totalCards:       len(cards),
+		studiedCards:     make(map[int]bool), // Initialize the map to track studied cards
+		state:            ShowingQuestion,
+		markdownRenderer: mdRenderer,
 	}
 }
 
@@ -145,6 +150,7 @@ func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, studyKeys.Skip):
 			// Skip this card and go to the next one
 			s.nextCard()
+			return s, nil
 		}
 
 		// Handle rating keys when showing the answer
@@ -175,6 +181,7 @@ func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 					// Move to the next card
 					s.nextCard()
+					return s, nil
 				}
 			}
 		}
@@ -182,6 +189,11 @@ func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		s.width = msg.Width
 		s.height = msg.Height
+
+		// Update markdown renderer with new width
+		if s.markdownRenderer != nil {
+			s.markdownRenderer.UpdateWidth(s.width - 10) // Leave some margin
+		}
 	}
 
 	return s, nil
@@ -273,9 +285,6 @@ func (s *StudyScreen) View() string {
 	title := fmt.Sprintf("Studying: %s", s.deck.Name)
 	cardCount := fmt.Sprintf("Card %d/%d", s.cardIndex+1, s.totalCards)
 
-	// Get the current card's question and answer
-	currentCard := s.cards[s.cardIndex]
-
 	sb.WriteString(studyTitleStyle.Render(title))
 	sb.WriteString(strings.Repeat(" ", max(1, s.width-len(title)-len(cardCount))))
 	sb.WriteString(cardCountStyle.Render(cardCount))
@@ -285,13 +294,19 @@ func (s *StudyScreen) View() string {
 	sb.WriteString(s.renderProgressBar())
 	sb.WriteString("\n\n")
 
-	// Question box
-	sb.WriteString(questionStyle.Render(currentCard.Question))
+	// Get the current card
+	currentCard := s.cards[s.cardIndex]
+
+	// Question box with markdown rendering
+	renderedQuestion := s.markdownRenderer.Render(currentCard.Question)
+	sb.WriteString(questionStyle.Render(renderedQuestion))
 	sb.WriteString("\n\n")
 
 	// Answer or prompt to show answer
 	if s.state == ShowingAnswer {
-		sb.WriteString(answerStyle.Render(currentCard.Answer))
+		// Render answer with markdown
+		renderedAnswer := s.markdownRenderer.Render(currentCard.Answer)
+		sb.WriteString(answerStyle.Render(renderedAnswer))
 		sb.WriteString("\n\n")
 
 		// Rating buttons
