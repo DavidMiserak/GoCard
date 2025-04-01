@@ -10,6 +10,7 @@ require (
 	github.com/charmbracelet/bubbletea v1.1.2
 	github.com/charmbracelet/glamour v0.9.1
 	github.com/charmbracelet/lipgloss v1.1.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
