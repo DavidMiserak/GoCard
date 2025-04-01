@@ -33,11 +33,9 @@ func NewMarkdownRenderer(width int, themeName string) *MarkdownRenderer {
 		themeName = "monokai"
 	}
 
-	themeJson := defaultMarkdownStyleWithChroma(themeName)
-
 	// Initialize glamour renderer with explicit style
 	renderer, _ := glamour.NewTermRenderer(
-		glamour.WithStylesFromJSONBytes(themeJson),
+		glamour.WithStandardStyle("dark"),
 		glamour.WithWordWrap(width),
 		glamour.WithEmoji(),
 	)
@@ -94,7 +92,7 @@ func (r *MarkdownRenderer) UpdateWidth(width int) {
 
 	// Create a new renderer with the updated width
 	renderer, _ := glamour.NewTermRenderer(
-		glamour.WithStylesFromJSONBytes(defaultMarkdownStyleWithChroma(r.syntaxTheme)),
+		glamour.WithStandardStyle("dark"),
 		glamour.WithWordWrap(width),
 		glamour.WithEmoji(),
 	)
@@ -115,7 +113,7 @@ func (r *MarkdownRenderer) SetSyntaxTheme(themeName string) {
 
 	// Update renderer with new theme
 	renderer, _ := glamour.NewTermRenderer(
-		glamour.WithStylesFromJSONBytes(defaultMarkdownStyleWithChroma(themeName)),
+		glamour.WithStandardStyle("dark"),
 		glamour.WithWordWrap(r.defaultWidth),
 		glamour.WithEmoji(),
 	)
@@ -161,82 +159,4 @@ func (r *MarkdownRenderer) Render(markdown string) string {
 // ClearCache clears the rendering cache
 func (r *MarkdownRenderer) ClearCache() {
 	r.renderedCache = make(map[string]string)
-}
-
-// defaultMarkdownStyleWithChroma returns a JSON byte array with the default styling configuration
-func defaultMarkdownStyleWithChroma(themeName string) []byte {
-	return []byte(fmt.Sprintf(`{
-		"document": {},
-		"block_quote": {
-			"indent": 1,
-			"indent_token": "│ "
-		},
-		"paragraph": {},
-		"list": {
-			"level_indent": 2
-		},
-		"enumerated_list": {
-			"level_1": {
-				"prefix": "1. ",
-				"level_indent": 2
-			},
-			"level_2": {
-				"prefix": "a. ",
-				"level_indent": 4
-			},
-			"level_3": {
-				"prefix": "i. ",
-				"level_indent": 6
-			}
-		},
-		"heading": {
-			"level_1": {
-				"prefix": "# ",
-				"bold": true
-			},
-			"level_2": {
-				"prefix": "## ",
-				"bold": true
-			},
-			"level_3": {
-				"prefix": "### ",
-				"bold": true
-			},
-			"level_4": {
-				"prefix": "#### ",
-				"bold": true
-			},
-			"level_5": {
-				"prefix": "##### ",
-				"bold": true
-			},
-			"level_6": {
-				"prefix": "###### ",
-				"bold": true
-			}
-		},
-		"code_block": {
-			"theme": "%s",
-			"custom_renderer": "renderCodeBlock"
-		},
-		"html_block": {},
-		"thematic_break": {
-			"border": "─"
-		},
-		"text": {},
-		"emphasis": {
-			"italic": true
-		},
-		"strong": {
-			"bold": true
-		},
-		"link": {
-			"underline": true,
-			"color": "blue"
-		},
-		"code": {
-			"inline": true,
-			"border": true
-		}
-	}`, themeName))
 }
