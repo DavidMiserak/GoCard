@@ -15,7 +15,7 @@ import (
 func TestGetTotalCards(t *testing.T) {
 	store := createTestStoreForSummary()
 
-	expectedCount := 14 // Total count of cards across all decks in our test store
+	expectedCount := 19 // Total count of cards across all decks in our test store
 	actualCount := getTotalCards(store)
 
 	if actualCount != expectedCount {

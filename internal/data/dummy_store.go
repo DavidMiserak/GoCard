@@ -16,6 +16,7 @@ func GetDummyDecks() []model.Deck {
 		getDataStructuresDeck(),
 		getAlgoDeck(),
 		getBubbleTeaDeck(),
+		getPythonDeck(),
 	}
 
 	return decks
@@ -258,4 +259,76 @@ func getBubbleTeaDeck() model.Deck {
 	}
 
 	return btDeck
+}
+
+// getPythonDeck creates a sample deck for Python programming
+func getPythonDeck() model.Deck {
+	pythonCards := []model.Card{
+		{
+			ID:           "python-1",
+			Question:     "What are list comprehensions in Python?",
+			Answer:       "List comprehensions are a concise way to create lists in Python.\n\n```python\n# Example\nnumbers = [1, 2, 3, 4, 5]\nsquares = [x**2 for x in numbers]\n# Result: [1, 4, 9, 16, 25]\n```\n\nThey can also include conditions:\n\n```python\neven_squares = [x**2 for x in numbers if x % 2 == 0]\n# Result: [4, 16]\n```",
+			DeckID:       "python-programming",
+			LastReviewed: time.Now().Add(-24 * time.Hour),
+			NextReview:   time.Now().Add(48 * time.Hour),
+			Ease:         2.5,
+			Interval:     2,
+			Rating:       4,
+		},
+		{
+			ID:           "python-2",
+			Question:     "What are decorators in Python?",
+			Answer:       "Decorators are a way to modify or enhance functions without changing their code directly.\n\n```python\n# Simple decorator example\ndef my_decorator(func):\n    def wrapper():\n        print(\"Something before the function is called.\")\n        func()\n        print(\"Something after the function is called.\")\n    return wrapper\n\n@my_decorator\ndef say_hello():\n    print(\"Hello!\")\n\n# When calling say_hello(), the output will be:\n# Something before the function is called.\n# Hello!\n# Something after the function is called.\n```",
+			DeckID:       "python-programming",
+			LastReviewed: time.Now().Add(-36 * time.Hour),
+			NextReview:   time.Now().Add(72 * time.Hour),
+			Ease:         2.3,
+			Interval:     3,
+			Rating:       3,
+		},
+		{
+			ID:           "python-3",
+			Question:     "How do context managers work in Python?",
+			Answer:       "Context managers in Python handle setup and teardown operations using the `with` statement.\n\n```python\n# Example using file handling\nwith open('file.txt', 'r') as file:\n    data = file.read()\n# File is automatically closed after the block\n```\n\nYou can create custom context managers using either:\n\n1. A class with `__enter__` and `__exit__` methods\n2. The `@contextmanager` decorator\n\n```python\nfrom contextlib import contextmanager\n\n@contextmanager\ndef my_context():\n    print(\"Setup\")\n    try:\n        yield\n    finally:\n        print(\"Teardown\")\n```",
+			DeckID:       "python-programming",
+			LastReviewed: time.Now().Add(-48 * time.Hour),
+			NextReview:   time.Now().Add(96 * time.Hour),
+			Ease:         2.7,
+			Interval:     4,
+			Rating:       5,
+		},
+		{
+			ID:           "python-4",
+			Question:     "What are Python's magic methods?",
+			Answer:       "Magic methods (dunder methods) are special methods with double underscores that allow classes to implement operator overloading and other language features.\n\nCommon examples:\n\n* `__init__`: Constructor\n* `__str__`: String representation for users\n* `__repr__`: String representation for developers\n* `__len__`: Length behavior\n* `__add__`: Addition behavior\n\n```python\nclass Vector:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n        \n    def __add__(self, other):\n        return Vector(self.x + other.x, self.y + other.y)\n        \n    def __str__(self):\n        return f\"Vector({self.x}, {self.y})\"\n```",
+			DeckID:       "python-programming",
+			LastReviewed: time.Now().Add(-60 * time.Hour),
+			NextReview:   time.Now().Add(120 * time.Hour),
+			Ease:         2.4,
+			Interval:     5,
+			Rating:       4,
+		},
+		{
+			ID:           "python-5",
+			Question:     "What are generators in Python and how do they differ from regular functions?",
+			Answer:       "Generators are functions that return an iterator that yields values one at a time, calculated on-demand.\n\nKey differences:\n\n* Use `yield` instead of `return`\n* Maintain state between calls\n* Memory efficient for large sequences\n\n```python\ndef count_up_to(max):\n    count = 1\n    while count <= max:\n        yield count\n        count += 1\n\n# Usage\nfor number in count_up_to(5):\n    print(number)\n# Output: 1 2 3 4 5\n```\n\nGenerator expressions (similar to list comprehensions):\n\n```python\nsquares_gen = (x**2 for x in range(1000000))\n# Doesn't compute all values immediately\n```",
+			DeckID:       "python-programming",
+			LastReviewed: time.Now().Add(-72 * time.Hour),
+			NextReview:   time.Now().Add(144 * time.Hour),
+			Ease:         2.6,
+			Interval:     6,
+			Rating:       4,
+		},
+	}
+
+	pythonDeck := model.Deck{
+		ID:          "python-programming",
+		Name:        "Python Programming",
+		Description: "Core Python programming concepts and features",
+		Cards:       pythonCards,
+		CreatedAt:   time.Now().Add(-40 * 24 * time.Hour),
+		LastStudied: time.Now().Add(-24 * time.Hour),
+	}
+
+	return pythonDeck
 }
