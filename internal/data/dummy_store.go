@@ -17,6 +17,7 @@ func GetDummyDecks() []model.Deck {
 		getAlgoDeck(),
 		getBubbleTeaDeck(),
 		getPythonDeck(),
+		getLongAnswerDeck(),
 	}
 
 	return decks
@@ -331,4 +332,90 @@ func getPythonDeck() model.Deck {
 	}
 
 	return pythonDeck
+}
+
+func getLongAnswerDeck() model.Deck {
+	longAnswer := "```go\n" + `
+func fanOut(input <-chan int, n int) []<-chan int {
+    // Create n output channels
+    outputs := make([]<-chan int, n)
+
+    for i := 0; i < n; i++ {
+        outputs[i] = worker(input)
+    }
+
+    return outputs
+}
+
+func worker(input <-chan int) <-chan int {
+    output := make(chan int)
+
+    go func() {
+        defer close(output)
+        for n := range input {
+            // Do some work with n
+            result := process(n)
+            output <- result
+        }
+    }()
+
+    return output
+}
+
+func fanIn(inputs []<-chan int) <-chan int {
+    output := make(chan int)
+    var wg sync.WaitGroup
+
+    // Start a goroutine for each input channel
+    for _, ch := range inputs {
+        wg.Add(1)
+        go func(ch <-chan int) {
+            defer wg.Done()
+            for n := range ch {
+                output <- n
+            }
+        }(ch)
+    }
+
+    // Close output once all input channels are drained
+    go func() {
+        wg.Wait()
+        close(output)
+    }()
+
+    return output
+}
+` + "```" + `
+
+### When to use it
+
+- CPU-intensive operations that can be parallelized
+- Operations that have independent work units
+- When you need to process many items but control the level of concurrency
+- Example use cases: image processing, data transformation pipelines, web scraping
+`
+	longAnswerCards := []model.Card{
+		{
+			ID:           "long-1",
+			DeckID:       "long-answer",
+			LastReviewed: time.Now().Add(-24 * time.Hour),
+			NextReview:   time.Now().Add(48 * time.Hour),
+			Ease:         2.5,
+			Interval:     2,
+			Rating:       4,
+			Question:     "What is the fan-out fan-in concurrency pattern in Go and when should you use it?",
+			Answer:       longAnswer,
+		},
+	}
+
+	longDeck := model.Deck{
+		ID:          "long-answer",
+		Name:        "Long Answer",
+		Description: "Long answer questions",
+		Cards:       longAnswerCards,
+		CreatedAt:   time.Now().Add(-30 * 24 * time.Hour),
+		LastStudied: time.Now().Add(-24 * time.Hour),
+	}
+
+	return longDeck
 }
