@@ -107,7 +107,7 @@ func TestStatisticsScreenUpdate(t *testing.T) {
 	}
 
 	// Test window size update
-	width, height := 80, 24
+	width, height := 120, 24
 	statsScreen = NewStatisticsScreen(store) // Reset stats screen
 	model, _ = statsScreen.Update(tea.WindowSizeMsg{Width: width, Height: height})
 	updatedScreen = model.(*StatisticsScreen)

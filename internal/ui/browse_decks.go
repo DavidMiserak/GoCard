@@ -138,7 +138,7 @@ func (b BrowseScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		b.width = msg.Width
+		b.width = 120 // Default width
 		b.height = msg.Height
 	}
 
@@ -209,7 +209,7 @@ func (b BrowseScreen) View() string {
 	s += "\n\n"
 
 	// Help text
-	help := "↑/↓: Navigate" + "\tEnter: Study\t" + "b: Back" + "\tn/p: Next/Prev Page" + "\tq: Quit"
+	help := "\t↑/↓: Navigate" + "\tEnter: Study\t" + "b: Back" + "\tn/p: Next/Prev Page" + "\tq: Quit"
 	s += browseHelpStyle.Render(help)
 
 	return s

@@ -163,3 +163,8 @@ var (
 	progressBarFilledStyle = lipgloss.NewStyle().
 				Background(colorBlue)
 )
+
+// ViewPort Styles
+var (
+	viewportStyle = lipgloss.NewStyle().Padding(1, 2)
+)

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/DavidMiserak/GoCard/internal/data"
@@ -87,6 +88,7 @@ type StudyScreen struct {
 	width            int
 	height           int
 	markdownRenderer *MarkdownRenderer
+	answerViewport   viewport.Model
 }
 
 // NewStudyScreen creates a new study screen for the specified deck
@@ -105,6 +107,10 @@ func NewStudyScreen(store *data.Store, deckID string) *StudyScreen {
 	// Initialize markdown renderer with default width (will be updated on resize)
 	mdRenderer := NewMarkdownRenderer(80)
 
+	// Initialize viewport for answer
+	answerViewport := viewport.New(80, 10)
+	answerViewport.Style = viewportStyle
+
 	return &StudyScreen{
 		store:            store,
 		deckID:           deckID,
@@ -115,6 +121,7 @@ func NewStudyScreen(store *data.Store, deckID string) *StudyScreen {
 		studiedCards:     make(map[int]bool), // Initialize the map to track studied cards
 		state:            ShowingQuestion,
 		markdownRenderer: mdRenderer,
+		answerViewport:   answerViewport,
 	}
 }
 
@@ -125,6 +132,8 @@ func (s *StudyScreen) Init() tea.Cmd {
 
 // Update handles user input and updates the model
 func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		// If in finished state, any key navigates to stats screen
@@ -135,6 +144,13 @@ func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Handle space key explicitly since it's special in Bubble Tea
 		if msg.Type == tea.KeySpace && s.state == ShowingQuestion {
 			s.state = ShowingAnswer
+
+			// Prepare viewport for the current card's answer
+			currentCard := s.cards[s.cardIndex]
+			renderedAnswer := s.markdownRenderer.Render(currentCard.Answer)
+			s.answerViewport.SetContent(renderedAnswer)
+			s.answerViewport.GotoTop()
+
 			return s, nil
 		}
 
@@ -153,8 +169,24 @@ func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return s, nil
 		}
 
-		// Handle rating keys when showing the answer
+		// Handle viewport scrolling and rating keys when showing the answer
 		if s.state == ShowingAnswer {
+			// Viewport-specific key handling
+			switch {
+			case key.Matches(msg, key.NewBinding(key.WithKeys("up", "k"))):
+				s.answerViewport.LineUp(1)
+			case key.Matches(msg, key.NewBinding(key.WithKeys("down", "j"))):
+				s.answerViewport.LineDown(1)
+			case key.Matches(msg, key.NewBinding(key.WithKeys("pgup", "ctrl+u"))):
+				s.answerViewport.HalfViewUp()
+			case key.Matches(msg, key.NewBinding(key.WithKeys("pgdown", "ctrl+d"))):
+				s.answerViewport.HalfViewDown()
+			case key.Matches(msg, key.NewBinding(key.WithKeys("home"))):
+				s.answerViewport.GotoTop()
+			case key.Matches(msg, key.NewBinding(key.WithKeys("end"))):
+				s.answerViewport.GotoBottom()
+			}
+
 			// Check if the key pressed is a number between 1-5 for ratings
 			if msg.Type == tea.KeyRunes && len(msg.Runes) == 1 {
 				r := msg.Runes[0]
@@ -187,16 +219,22 @@ func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		s.width = msg.Width
+		s.width = 120 // Default width
 		s.height = msg.Height
 
 		// Update markdown renderer with new width
 		if s.markdownRenderer != nil {
 			s.markdownRenderer.UpdateWidth(s.width - 10) // Leave some margin
 		}
+
+		// Update viewport size
+		viewportWidth := s.width - 10
+		viewportHeight := s.height - 15 // Adjust based on other UI elements
+		s.answerViewport.Width = viewportWidth
+		s.answerViewport.Height = viewportHeight
 	}
 
-	return s, nil
+	return s, cmd
 }
 
 // nextCard advances to the next card or transitions to FinishedStudying state
@@ -235,7 +273,7 @@ func (s *StudyScreen) nextCard() {
 
 // renderProgressBar renders a progress bar showing the current card position
 func (s *StudyScreen) renderProgressBar() string {
-	width := 50
+	width := 80
 
 	// Handle edge cases to prevent errors
 	if s.totalCards <= 0 {
@@ -304,9 +342,8 @@ func (s *StudyScreen) View() string {
 
 	// Answer or prompt to show answer
 	if s.state == ShowingAnswer {
-		// Render answer with markdown
-		renderedAnswer := s.markdownRenderer.Render(currentCard.Answer)
-		sb.WriteString(answerStyle.Render(renderedAnswer))
+		// Render answer with markdown and viewport
+		sb.WriteString(answerStyle.Render(s.answerViewport.View()))
 		sb.WriteString("\n\n")
 
 		// Rating buttons
@@ -320,14 +357,14 @@ func (s *StudyScreen) View() string {
 		sb.WriteString("\n\n")
 
 		// Help text for rating state
-		sb.WriteString(studyHelpStyle.Render("1-5: Rate Card    b: Back to Decks    q: Quit"))
+		sb.WriteString(studyHelpStyle.Render("\t1-5: Rate Card" + "\tj/k: Scroll" + "\tb: Back to Decks" + "\tq: Quit"))
 	} else {
 		// Show the prompt to reveal the answer
 		sb.WriteString(revealPromptStyle.Render("Press SPACE to reveal answer"))
 		sb.WriteString("\n\n")
 
 		// Help text for question state
-		sb.WriteString(studyHelpStyle.Render("SPACE: Show Answer    <: Skip    b: Back to Decks    q: Quit"))
+		sb.WriteString(studyHelpStyle.Render("\tSPACE: Show Answer" + "\t<: Skip" + "\tb: Back to Decks" + "\tq: Quit"))
 	}
 
 	return sb.String()

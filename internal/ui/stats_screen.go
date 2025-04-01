@@ -68,7 +68,7 @@ func (s *StatisticsScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		s.width = msg.Width
+		s.width = 120 // Default width
 		s.height = msg.Height
 	}
 

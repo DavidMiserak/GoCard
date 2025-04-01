@@ -107,7 +107,7 @@ func (m MainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
+		m.width = 120 // Default width
 		m.height = msg.Height
 	}
 
@@ -132,7 +132,7 @@ func (m MainMenu) View() string {
 	}
 
 	// Help
-	s += "\n" + helpStyle.Render("↑/↓: Navigate"+"\tEnter: Select"+"\tq: Quit")
+	s += "\n" + helpStyle.Render("\t↑/↓: Navigate"+"\tEnter: Select"+"\tq: Quit")
 
 	return s
 }
