@@ -43,14 +43,21 @@ type MainMenu struct {
 	selected int
 	width    int
 	height   int
+	store    *data.Store // Added store field
 }
 
 // NewMainMenu creates a new main menu
-func NewMainMenu() *MainMenu {
+func NewMainMenu(store *data.Store) *MainMenu {
+	// If no store provided, create a new one with dummy data
+	if store == nil {
+		store = data.NewStore()
+	}
+
 	return &MainMenu{
 		items:    []string{"Study", "Browse Decks", "Statistics", "Quit"},
 		cursor:   0,
 		selected: -1,
+		store:    store,
 	}
 }
 
@@ -84,15 +91,15 @@ func (m MainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch m.cursor {
 			case 0: // Study
 				// Navigate to study screen
-				return NewBrowseScreen(data.NewStore()), nil
+				return NewBrowseScreen(m.store), nil
 
 			case 1: // Browse Decks
 				// Navigate to browse decks screen
-				return NewBrowseScreen(data.NewStore()), nil
+				return NewBrowseScreen(m.store), nil
 
 			case 2: // Statistics
 				// Navigate to statistics screen
-				return NewStatisticsScreen(data.NewStore()), nil
+				return NewStatisticsScreen(m.store), nil
 
 			case 3: // Quit
 				return m, tea.Quit

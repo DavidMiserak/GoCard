@@ -61,7 +61,7 @@ func (s *StatisticsScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return s, tea.Quit
 		case "b":
 			// Return to main menu
-			return NewMainMenu(), nil
+			return NewMainMenu(s.store), nil
 		case "tab":
 			// Cycle through tabs
 			s.activeTab = (s.activeTab + 1) % 3

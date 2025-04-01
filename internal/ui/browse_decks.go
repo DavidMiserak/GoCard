@@ -125,7 +125,7 @@ func (b BrowseScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, browseKeys.Back):
 			// Return to main menu
-			return NewMainMenu(), nil
+			return NewMainMenu(b.store), nil
 
 		case key.Matches(msg, browseKeys.Enter):
 			// Get the selected deck

@@ -6,13 +6,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/DavidMiserak/GoCard/internal/data"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // TestMainMenuView tests that the menu renders correctly
 func TestMainMenuView(t *testing.T) {
+	// Create a test store
+	store := data.NewStore()
+
 	// Create a new instance of our menu
-	menu := NewMainMenu()
+	menu := NewMainMenu(store)
 
 	// Test the initial view rendering
 	view := menu.View()
@@ -38,8 +42,11 @@ func TestMainMenuView(t *testing.T) {
 
 // TestMainMenuUpdate tests cursor movement and selection
 func TestMainMenuUpdate(t *testing.T) {
+	// Create a test store
+	store := data.NewStore()
+
 	// Create a new instance of our menu
-	menu := NewMainMenu()
+	menu := NewMainMenu(store)
 
 	// Test cursor movement with up/down keys
 	downMsg := tea.KeyMsg{Type: tea.KeyDown}

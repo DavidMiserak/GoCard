@@ -3,6 +3,9 @@
 package data
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/DavidMiserak/GoCard/internal/model"
@@ -24,6 +27,67 @@ func NewStore() *Store {
 	store.Decks = GetDummyDecks()
 
 	return store
+}
+
+// NewStoreFromDir creates a new data store with decks from the specified directory
+func NewStoreFromDir(dirPath string) (*Store, error) {
+	store := &Store{
+		Decks: []model.Deck{},
+	}
+
+	// List all subdirectories (each will be a deck)
+	subdirs, err := listSubdirectories(dirPath)
+	if err != nil {
+		return nil, fmt.Errorf("error listing subdirectories: %w", err)
+	}
+
+	// If no subdirectories found, treat the main directory as a single deck
+	if len(subdirs) == 0 {
+		deck, err := CreateDeckFromDir(dirPath)
+		if err != nil {
+			return nil, fmt.Errorf("error creating deck from directory: %w", err)
+		}
+		store.Decks = append(store.Decks, *deck)
+		return store, nil
+	}
+
+	// Create decks from each subdirectory
+	for _, subdir := range subdirs {
+		deck, err := CreateDeckFromDir(subdir)
+		if err != nil {
+			// Log the error but continue with other subdirectories
+			fmt.Printf("Warning: Error loading deck from %s: %v\n", subdir, err)
+			continue
+		}
+		store.Decks = append(store.Decks, *deck)
+	}
+
+	// If no decks were loaded, use dummy data
+	if len(store.Decks) == 0 {
+		fmt.Println("No decks found in the specified directory. Using dummy data instead.")
+		store.Decks = GetDummyDecks()
+	}
+
+	return store, nil
+}
+
+// listSubdirectories lists all immediate subdirectories in the given path
+func listSubdirectories(dirPath string) ([]string, error) {
+	var subdirs []string
+
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			subdirPath := filepath.Join(dirPath, entry.Name())
+			subdirs = append(subdirs, subdirPath)
+		}
+	}
+
+	return subdirs, nil
 }
 
 // GetDecks returns all decks
