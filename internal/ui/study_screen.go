@@ -138,6 +138,14 @@ func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		// If in finished state, any key navigates to stats screen
 		if s.state == FinishedStudying {
+			// Only try to save markdown if this isn't a dummy deck
+			if strings.Contains(s.deckID, "/") || strings.Contains(s.deckID, "\\") {
+				if err := s.store.SaveDeckToMarkdown(s.deckID); err != nil {
+					// Log the error but continue
+					fmt.Printf("Error saving deck to markdown: %v\n", err)
+				}
+			}
+
 			return NewStatisticsScreenWithDeck(s.store, s.deckID), nil
 		}
 

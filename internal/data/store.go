@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/DavidMiserak/GoCard/internal/model"
@@ -181,4 +183,98 @@ func (s *Store) SaveCardReview(card model.Card, rating int) bool {
 	deckUpdated := s.UpdateDeckLastStudied(card.DeckID)
 
 	return cardUpdated && deckUpdated
+}
+
+// SaveDeckToMarkdown saves SRS metadata for all cards in a deck back to their markdown files
+func (s *Store) SaveDeckToMarkdown(deckID string) error {
+	// Get the deck from the store
+	deck, found := s.GetDeck(deckID)
+	if !found {
+		return fmt.Errorf("deck with ID %s not found", deckID)
+	}
+
+	// Only proceed if the deck ID looks like a valid directory path
+	if !filepath.IsAbs(deck.ID) && !strings.Contains(deck.ID, "/") && !strings.Contains(deck.ID, "\\") {
+		// This appears to be a dummy deck without proper file paths
+		return nil
+	}
+
+	// For each card in the deck, update its SRS metadata
+	for _, card := range deck.Cards {
+		// Skip cards without a proper file path
+		if card.ID == "" || (!filepath.IsAbs(card.ID) &&
+			!strings.Contains(card.ID, "/") && !strings.Contains(card.ID, "\\")) {
+			continue
+		}
+
+		// Verify the file exists before updating
+		if _, err := os.Stat(card.ID); os.IsNotExist(err) {
+			// Skip non-existent files
+			continue
+		}
+
+		// Read the existing file content
+		content, err := os.ReadFile(card.ID)
+		if err != nil {
+			return fmt.Errorf("error reading card file %s: %w", card.ID, err)
+		}
+
+		// Parse the content to extract front matter
+		contentStr := string(content)
+		fmStart := strings.Index(contentStr, "---")
+		if fmStart < 0 {
+			continue // No front matter found
+		}
+
+		fmEnd := strings.Index(contentStr[fmStart+3:], "---")
+		if fmEnd < 0 {
+			continue // Incomplete front matter
+		}
+		fmEnd = fmStart + 3 + fmEnd
+
+		frontMatter := contentStr[fmStart : fmEnd+3]
+		bodyContent := contentStr[fmEnd+3:]
+
+		// Update only the SRS-specific fields in front matter
+		updatedFrontMatter := updateFrontMatterFields(frontMatter, card)
+
+		// Combine updated front matter with original body content
+		updatedContent := updatedFrontMatter + bodyContent
+
+		// Write back to file
+		if err := os.WriteFile(card.ID, []byte(updatedContent), 0644); err != nil {
+			return fmt.Errorf("error writing updated card file %s: %w", card.ID, err)
+		}
+	}
+
+	return nil
+}
+
+// Helper function to update only SRS-related fields in front matter
+func updateFrontMatterFields(frontMatter string, card model.Card) string {
+	// Regular expressions to update specific fields
+	reviewIntervalRe := regexp.MustCompile(`(review_interval:\s*)[0-9.]+`)
+	difficultyRe := regexp.MustCompile(`(difficulty:\s*)[0-9.]+`)
+	lastReviewedRe := regexp.MustCompile(`(last_reviewed:\s*)[^\n]+`)
+
+	// Format date in the YYYY-MM-DD format
+	lastReviewedFormatted := card.LastReviewed.Format("2006-01-02")
+
+	// Update each field if it exists
+	if reviewIntervalRe.MatchString(frontMatter) {
+		frontMatter = reviewIntervalRe.ReplaceAllString(frontMatter,
+			fmt.Sprintf("${1}%d", card.Interval))
+	}
+
+	if difficultyRe.MatchString(frontMatter) {
+		frontMatter = difficultyRe.ReplaceAllString(frontMatter,
+			fmt.Sprintf("${1}%.1f", card.Ease))
+	}
+
+	if lastReviewedRe.MatchString(frontMatter) {
+		frontMatter = lastReviewedRe.ReplaceAllString(frontMatter,
+			fmt.Sprintf("${1}%s", lastReviewedFormatted))
+	}
+
+	return frontMatter
 }
