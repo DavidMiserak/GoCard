@@ -2,7 +2,7 @@
 
 .PHONY: clean
 clean:
-	rm -f GoCard
+	rm -f GoCard gocard-linux-amd64 gocard-macos-amd64 gocard-windows-amd64.exe
 	go clean
 
 .PHONY: pre-commit-setup
@@ -62,3 +62,18 @@ test-cover-check:
 	else \
 		echo "Coverage meets threshold of 70%"; \
 	fi
+
+.PHONY: build-all
+build-all: gocard-linux-amd64 gocard-macos-amd64 gocard-windows-amd64.exe
+
+gocard-linux-amd64:
+	@echo "Building for Linux..."
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -v -o $@ ./cmd/gocard
+
+gocard-macos-amd64:
+	@echo "Building for macOS..."
+	GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -v -o $@ ./cmd/gocard
+
+gocard-windows-amd64.exe:
+	@echo "Building for Windows..."
+	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -v -o $@ ./cmd/gocard

@@ -33,3 +33,6 @@ Thumbs.db
 
 # Log files
 *.log
+
+# Binary files
+gocard-*-amd64
