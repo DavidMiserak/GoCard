@@ -47,7 +47,7 @@ func TestWriteCard(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tempDir) //nolint:errcheck
 
 	// Create a test card
 	testPath := filepath.Join(tempDir, "test-write.md")
@@ -105,7 +105,7 @@ func TestWriteDeckToMarkdown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tempDir) //nolint:errcheck
 
 	// Create a test deck with multiple cards
 	now := time.Now()
@@ -165,7 +165,7 @@ func TestWriteDeckWithProblematicFilenames(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tempDir) //nolint:errcheck
 
 	// Create a test deck with cards that have problematic IDs
 	deck := &model.Deck{
@@ -240,7 +240,7 @@ func TestUpdateCardFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tempDir) //nolint:errcheck
 
 	// Create initial card file
 	testPath := filepath.Join(tempDir, "update-test.md")

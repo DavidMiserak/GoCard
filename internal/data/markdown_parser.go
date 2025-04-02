@@ -38,7 +38,7 @@ func ParseMarkdownFile(path string) (*MarkdownCard, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error opening file: %w", err)
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	card := &MarkdownCard{
 		Path: path,

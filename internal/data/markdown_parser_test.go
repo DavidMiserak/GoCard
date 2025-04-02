@@ -17,7 +17,7 @@ func TestParseMarkdownFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tempDir) //nolint:errcheck
 
 	// Create a test markdown file
 	testFile := filepath.Join(tempDir, "test-card.md")
@@ -147,7 +147,7 @@ func TestScanDirForMarkdown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tempDir) //nolint:errcheck
 
 	// Create test files
 	files := []string{
@@ -204,7 +204,7 @@ func TestImportMarkdownToDeck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tempDir) //nolint:errcheck
 
 	// Create test markdown files
 	for i := 1; i <= 2; i++ {
@@ -265,7 +265,7 @@ func TestCreateDeckFromDir(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tempDir) //nolint:errcheck
 
 	// Create test markdown files
 	for i := 1; i <= 3; i++ {
