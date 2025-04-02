@@ -113,11 +113,17 @@ type ForecastDay struct {
 
 // generateForecastData generates forecast data for the next n days
 func generateForecastData(store *data.Store, days int) []ForecastDay {
+	now := time.Now()
+	return generateForecastDataFromDate(store, days, now)
+}
+
+// New helper function with explicit date control for testing
+func generateForecastDataFromDate(store *data.Store, days int, baseDate time.Time) []ForecastDay {
 	forecast := make([]ForecastDay, days)
 
 	// Initialize the forecast days
 	for i := 0; i < days; i++ {
-		date := time.Now().AddDate(0, 0, i)
+		date := baseDate.AddDate(0, 0, i)
 		forecast[i] = ForecastDay{
 			Date:      date,
 			ReviewDue: 0,
@@ -132,23 +138,30 @@ func generateForecastData(store *data.Store, days int) []ForecastDay {
 				continue
 			}
 
-			// Calculate days from now
-			daysFromNow := int(time.Until(card.NextReview).Hours() / 24)
-
-			// If due within our forecast window
-			if daysFromNow >= 0 && daysFromNow < days {
-				if card.Interval > 0 {
-					// Card has been reviewed before (review card)
-					forecast[daysFromNow].ReviewDue++
-				} else {
-					// New card
-					forecast[daysFromNow].NewDue++
+			// Find which forecast day this card belongs to
+			for i, forecastDay := range forecast {
+				if isSameDay(card.NextReview, forecastDay.Date) {
+					if card.Interval > 0 {
+						// Card has been reviewed before (review card)
+						forecast[i].ReviewDue++
+					} else {
+						// New card
+						forecast[i].NewDue++
+					}
+					break // Card can only be due on one day
 				}
 			}
 		}
 	}
 
 	return forecast
+}
+
+// Helper function to check if two dates are the same day
+func isSameDay(date1, date2 time.Time) bool {
+	y1, m1, d1 := date1.Date()
+	y2, m2, d2 := date2.Date()
+	return y1 == y2 && m1 == m2 && d1 == d2
 }
 
 // renderForecastLegend renders the legend for the forecast chart
