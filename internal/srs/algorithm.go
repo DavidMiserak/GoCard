@@ -57,22 +57,24 @@ func ScheduleCard(card model.Card, rating int) model.Card {
 
 	case 4: // Good
 		// Standard increase in interval
-		if card.Interval == 0 {
+		switch card.Interval {
+		case 0:
 			card.Interval = defaultInterval
-		} else if card.Interval == 1 {
+		case 1:
 			card.Interval = 3
-		} else {
+		default:
 			card.Interval = int(float64(card.Interval) * card.Ease)
 		}
 		// Ease remains the same
 
 	case 5: // Easy
 		// Larger increase in interval, increase ease
-		if card.Interval == 0 {
+		switch card.Interval {
+		case 0:
 			card.Interval = defaultInterval * 2
-		} else if card.Interval == 1 {
+		case 1:
 			card.Interval = 4
-		} else {
+		default:
 			card.Interval = int(float64(card.Interval) * card.Ease * easyBonus)
 		}
 		card.Ease = minFloat(card.Ease+easeModifier, 4.0)
