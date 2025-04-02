@@ -100,6 +100,50 @@ def two_sum(nums, target):
 gocard -dir ~/GoCard
 ```
 
+## Application Interface
+
+GoCard features a clean, terminal-based user interface designed for distraction-free learning. Below are screenshots of the main application screens:
+
+<details>
+<summary>Click to view GoCard Interface Gallery</summary>
+
+### Main Menu
+
+![Main Menu](wireframes/high-fidelity/00-main-menu.svg)
+*The main menu provides quick access to study, browse decks, and view statistics.*
+
+### Deck Selection
+
+![Deck Selection](wireframes/high-fidelity/01-deck-selection.svg)
+*Browse and select from your collection of flashcard decks.*
+
+### Study Session - Question View
+
+![Study Session - Question](wireframes/high-fidelity/02-01-study-session-answer-hidden.svg)
+*Focus on one question at a time with a clean, distraction-free interface.*
+
+### Study Session - Answer Revealed
+
+![Study Session - Answer](wireframes/high-fidelity/02-01-study-session-answer-revealed.svg)
+*Rate your recall using the SuperMemo algorithm scale after revealing the answer.*
+
+### Statistics - Summary View
+
+![Statistics - Summary](wireframes/high-fidelity/03-01-stats-summary.svg)
+*Get an overview of your study progress and retention rates.*
+
+### Statistics - Deck Review
+
+![Statistics - Deck Review](wireframes/high-fidelity/03-02-stats-deck.svg)
+*Analyze performance for specific decks with detailed metrics.*
+
+### Statistics - Review Forecast
+
+![Statistics - Forecast](wireframes/high-fidelity/03-03-stats-forcast.svg)
+*Plan your study schedule with the upcoming review forecast.*
+
+</details>
+
 ## Project Structure
 
 GoCard follows a standard Go project layout with a focus on modularity and clean separation of concerns:
