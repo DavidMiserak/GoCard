@@ -2,7 +2,7 @@
 # scripts/create_release.sh - Helper script for creating a new GoCard release
 
 # Configuration
-VERSION="0.2.0"
+VERSION="0.3.0"
 TAG_NAME="v$VERSION"
 BRANCH_NAME="release/$VERSION"
 

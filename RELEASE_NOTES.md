@@ -1,71 +1,57 @@
-# GoCard v0.2.0 Release Notes
+# GoCard v0.3.0 Release Notes
 
-We're excited to announce GoCard v0.2.0, building on our initial release with significant improvements to the core functionality and user experience.
+We're excited to announce this release of GoCard, a terminal-based flashcard application designed for developers and learners who prefer to stay in the command line.
 
-## What's New
+## Key Features
 
-### Enhanced Markdown Support
+### Terminal-Based Flashcard System
 
-- **Goldmark Integration**: Completely reworked markdown processing using Goldmark for more reliable and feature-rich rendering
-- **Syntax Highlighting**: Support for over 50 programming languages with customizable themes
-- **Rich Content**: Better rendering of tables, lists, and code blocks
+- Study flashcards directly in your terminal with a clean, intuitive interface
+- Navigate using keyboard shortcuts (with vim-like navigation options)
+- View beautiful markdown rendering with syntax highlighting for code examples
 
-### Improved User Interface
+### Spaced Repetition Learning
 
-- **Card Editor**: Full-featured card creation and editing interface with markdown preview
-- **Auto-Save**: Automatic saving of changes to prevent data loss
-- **Tutorial Mode**: Interactive tutorial for first-time users
-- **Enhanced Navigation**: Vim and Emacs-style keyboard shortcuts for efficient navigation
-- **Deck Browser**: Improved deck browsing with statistics and breadcrumb navigation
+- Built on the SM-2 algorithm to optimize your learning and retention
+- Rate cards from 1-5 based on difficulty to customize your review schedule
+- Track progress with comprehensive statistics
 
-### File System Integration
+### Developer-Friendly
 
-- **Real-time Watching**: Robust file system monitoring with fsnotify for seamless external editing
-- **Directory Organization**: Enhanced deck management through directory structure
-- **File Operations**: Better handling of file moves, renames, and deletions
+- Store flashcards as plain markdown files for easy version control
+- Import and export decks as markdown for sharing and backup
+- Support for code snippets with syntax highlighting
 
-### Learning Features
+### Statistics and Tracking
 
-- **Enhanced SM-2 Algorithm**: Improved spaced repetition scheduling
-- **Review Sessions**: Comprehensive review session interface with statistics
-- **Learning Insights**: Better tracking of your learning progress
+- View your learning progress with visual statistics
+- Track retention rates and study patterns
+- Forecast upcoming reviews
 
 ## Installation
 
-### Download Binary
+Download the appropriate binary for your platform from the releases page:
 
-Download the binary for your platform from the releases page.
+- Linux: `gocard-linux-amd64`
+- macOS: `gocard-macos-amd64`
+- Windows: `gocard-windows-amd64.exe`
 
-### Building from Source
+Make the file executable
 
-```bash
-git clone https://github.com/DavidMiserak/GoCard.git
-cd GoCard
-go build -o GoCard ./cmd/gocard
-```
-
-### Using Go Install
+- for Linux:
 
 ```bash
-go install github.com/DavidMiserak/GoCard/cmd/gocard@latest
+chmod +x gocard-linux-amd64
 ```
 
-## Upgrading from v0.1.0
+- for macOS:
 
-This release is fully compatible with card files created in v0.1.0. No migration steps are needed - simply install the new version and run it with your existing card directory.
+```bash
+chmod +x gocard-macos-amd64
+```
 
-## Feedback and Contributions
+- for Windows:
 
-We welcome your feedback and contributions! Please file issues for bugs or feature requests on our GitHub repository.
-
-## Coming Soon
-
-We're actively working on more features:
-
-- Search and filter functionality
-- Import/export compatibility with other SRS systems
-- Customizable styling and themes
-- Code testing integration
-- Additional configuration options
-
-Thank you for using GoCard!
+```powershell
+# No need to change permissions, just run the .exe file
+```
