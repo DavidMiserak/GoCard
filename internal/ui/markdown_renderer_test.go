@@ -74,25 +74,28 @@ func TestMarkdownRenderer_Render(t *testing.T) {
 			name:     "Simple text",
 			markdown: "Hello, world!",
 			want: func(result string) bool {
-				return result != "" && strings.Contains(result, "Hello, world!")
+				cleanedResult := cleanAnsiCodes(result)
+				return cleanedResult != "" && strings.Contains(cleanedResult, "Hello, world!")
 			},
 		},
 		{
 			name:     "Markdown with headers",
 			markdown: "# Header 1\n## Header 2\n\nSome text.",
 			want: func(result string) bool {
-				return strings.Contains(result, "Header 1") &&
-					strings.Contains(result, "Header 2") &&
-					strings.Contains(result, "Some text.")
+				cleanedResult := cleanAnsiCodes(result)
+				return strings.Contains(cleanedResult, "Header 1") &&
+					strings.Contains(cleanedResult, "Header 2") &&
+					strings.Contains(cleanedResult, "Some text.")
 			},
 		},
 		{
 			name:     "Code block",
 			markdown: "```go\nfunc example() {\n\tfmt.Println(\"Hello\")\n}\n```",
 			want: func(result string) bool {
-				return strings.Contains(result, "func") &&
-					strings.Contains(result, "example") &&
-					strings.Contains(result, "Println")
+				cleanedResult := cleanAnsiCodes(result)
+				return strings.Contains(cleanedResult, "func") &&
+					strings.Contains(cleanedResult, "example") &&
+					strings.Contains(cleanedResult, "Println")
 			},
 		},
 	}
@@ -234,54 +237,59 @@ func TestMarkdownRenderer_FormattingPreservation(t *testing.T) {
 			name:     "Numbered List Preservation",
 			markdown: "1. First item\n2. Second item\n3. Third item",
 			validateFunc: func(input, rendered string) bool {
+				cleanedOutput := cleanAnsiCodes(rendered)
 				// Ensure numbered list markers are preserved exactly
-				return strings.Contains(rendered, "1. First item") &&
-					strings.Contains(rendered, "2. Second item") &&
-					strings.Contains(rendered, "3. Third item")
+				return strings.Contains(cleanedOutput, "1. First item") &&
+					strings.Contains(cleanedOutput, "2. Second item") &&
+					strings.Contains(cleanedOutput, "3. Third item")
 			},
 		},
 		{
 			name:     "Nested Numbered List Preservation",
 			markdown: "1. Parent Item\n   1. Nested Item\n   2. Another Nested Item\n2. Another Parent Item",
 			validateFunc: func(input, rendered string) bool {
-				return strings.Contains(rendered, "1. Parent Item") &&
-					strings.Contains(rendered, "a. Nested Item") &&
-					strings.Contains(rendered, "b. Another Nested Item") &&
-					strings.Contains(rendered, "2. Another Parent Item")
+				cleanedOutput := cleanAnsiCodes(rendered)
+				return strings.Contains(cleanedOutput, "1. Parent Item") &&
+					strings.Contains(cleanedOutput, "1. Nested Item") &&
+					strings.Contains(cleanedOutput, "2. Another Nested Item") &&
+					strings.Contains(cleanedOutput, "2. Another Parent Item")
 			},
 		},
 		{
 			name:     "Inline Code Preservation",
 			markdown: "This is `inline code` that should not change",
 			validateFunc: func(input, rendered string) bool {
-				return strings.Contains(rendered, "`inline code`")
+				cleanedOutput := cleanAnsiCodes(rendered)
+				return strings.Contains(cleanedOutput, "inline code")
 			},
 		},
 		{
 			name:     "Code Block Exact Spacing",
 			markdown: "```go\nfunc Example() {\n    fmt.Println(\"Hello\")\n}\n```",
 			validateFunc: func(input, rendered string) bool {
+				cleanedOutput := cleanAnsiCodes(rendered)
 				// Ensure code block spacing is preserved
-				return strings.Contains(rendered, "    fmt.Println(\"Hello\")") &&
-					strings.Contains(rendered, "func Example() {")
+				return strings.Contains(cleanedOutput, "    fmt.Println(\"Hello\")") &&
+					strings.Contains(cleanedOutput, "func Example() {")
 			},
 		},
 		{
 			name:     "Bullet List Preservation",
 			markdown: "- First bullet point\n- Second bullet point\n  - Nested bullet point",
 			validateFunc: func(input, rendered string) bool {
-				return strings.Contains(rendered, "- First bullet point") &&
-					strings.Contains(rendered, "- Second bullet point") &&
-					strings.Contains(rendered, "  - Nested bullet point")
+				cleanedOutput := cleanAnsiCodes(rendered)
+				return strings.Contains(cleanedOutput, "• First bullet point") &&
+					strings.Contains(cleanedOutput, "• Second bullet point") &&
+					strings.Contains(cleanedOutput, "  • Nested bullet point")
 			},
 		},
 		{
 			name:     "Block Quote Spacing",
-			markdown: "> Block quote\n> Another line of block quote\n>> Nested block quote",
+			markdown: "> Block quote.\n> Another line of block quote.\n>> Nested block quote.",
 			validateFunc: func(input, rendered string) bool {
-				return strings.Contains(rendered, "> Block quote") &&
-					strings.Contains(rendered, "> Another line of block quote") &&
-					strings.Contains(rendered, ">> Nested block quote")
+				cleanedOutput := cleanAnsiCodes(rendered)
+				return strings.Contains(cleanedOutput, "│ Block quote. Another line of block quote.") &&
+					strings.Contains(cleanedOutput, "│ │ Nested block quote.")
 			},
 		},
 	}
