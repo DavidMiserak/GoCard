@@ -254,8 +254,11 @@ The clean, distraction-free terminal interface includes:
 | `↓/j`              | Move down/scroll down    |
 | `Enter`            | Select/confirm           |
 | `Tab`              | Switch tab (in statistics)|
+| `a`                | Add card to current deck |
+| `e`                | Edit current card        |
 | `b`                | Back to previous screen  |
 | `q`                | Quit                     |
+
 
 ## Contributing
 

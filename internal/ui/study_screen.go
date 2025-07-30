@@ -5,6 +5,9 @@ package ui
 import (
 	"fmt"
 	"strings"
+	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -12,6 +15,7 @@ import (
 
 	"github.com/DavidMiserak/GoCard/internal/data"
 	"github.com/DavidMiserak/GoCard/internal/model"
+
 )
 
 // Key mapping for study screen
@@ -25,6 +29,8 @@ type studyKeyMap struct {
 	Rate3      key.Binding // Hard
 	Rate4      key.Binding // Good
 	Rate5      key.Binding // Easy
+	Add        key.Binding
+	Edit       key.Binding
 }
 
 var studyKeys = studyKeyMap{
@@ -63,6 +69,14 @@ var studyKeys = studyKeyMap{
 	Rate5: key.NewBinding(
 		key.WithKeys("5"),
 		key.WithHelp("5", "Easy"),
+	),
+	Add: key.NewBinding(
+		key.WithKeys("a"),
+		key.WithHelp("a", "Add"),
+	),
+	Edit: key.NewBinding(
+		key.WithKeys("e"),
+		key.WithHelp("e", "Edit"),
 	),
 }
 
@@ -135,6 +149,80 @@ func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+
+	// When returning from $EDITOR from add/edit cards
+	case data.EditorResponse: {
+		if msg.ExitCode != nil {
+			// Editor failed
+			fmt.Printf("Editor error: %v\n", msg.ExitCode)
+			os.Remove(msg.FileName) // ignore os.Remove error
+			return s, nil
+		}
+
+		// successfully created tmp file with $EDITOR; parse into card to ensure valid
+		tempMarkdownCard, err := data.ParseMarkdownFile(msg.FileName)
+		if err != nil {
+			fmt.Printf("Error parsing card: %v\n", err)
+			os.Remove(msg.FileName)
+			return s, nil
+		}
+
+		// Ensure card isn't empty
+		if strings.TrimSpace(tempMarkdownCard.Question) == "" || strings.TrimSpace(tempMarkdownCard.Answer) == "" {
+			fmt.Printf("Attempting to add/edit empty card. Both question/answer are required")
+			os.Remove(msg.FileName)
+			return s, nil
+		}
+
+		// Convert from *MarkdownCard to model.Card
+		newCard := tempMarkdownCard.ToModelCard(s.deckID)
+
+		if msg.IsEdit {
+			// newCard.ID points to temp file. Point it to original so can overwrite
+			newCard.ID = msg.CardID
+
+			// Update existing card
+			err = data.WriteCard(newCard, msg.CardID)
+			if err != nil {
+				fmt.Printf("Error saving card: %v\n", err)
+				os.Remove(msg.FileName)
+				return s, nil
+			}
+
+			// Overwrite card in store and study screen's deck
+			s.store.UpdateCard(newCard)
+			s.cards[s.cardIndex] = newCard
+			
+		} else {
+			// Creating a new card, autogenerate unique filename based on time
+			filename := filepath.Join(s.deckID, fmt.Sprintf("card_%d.md", time.Now().Unix()))
+			newCard.ID = filename // use filename as cardID
+
+			err = data.WriteCard(newCard, filename)
+			if err != nil {
+				fmt.Printf("Error saving card: %v\n", err)
+				os.Remove(msg.FileName)
+				return s, nil
+			}
+
+			// Add to store and study screen's state deck for persistence
+
+			// store's in memory deck
+			s.store.AddCardToDeck(newCard)
+
+			// Local study session
+			// TODO: GoCard currently shows ALL cards during study, not just due cards
+			// If we filter by due date, this should also check newCard.NextReview
+			s.cards = append(s.cards, newCard)
+			s.totalCards = len(s.cards)
+			s.cardIndex = len(s.cards) - 1 // jump immediately to new card
+
+		}
+
+		// Successfully written file. can delete temp
+		os.Remove(msg.FileName)
+	}
+
 	case tea.KeyMsg:
 		// If in finished state, any key navigates to stats screen
 		if s.state == FinishedStudying {
@@ -175,6 +263,22 @@ func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Skip this card and go to the next one
 			s.nextCard()
 			return s, nil
+
+		case key.Matches(msg, studyKeys.Add):
+			tmpFilePath, err := data.CreateTmpFileWithTemplate()
+			if err != nil {
+				return s, nil
+			}
+			return s, data.LaunchEditor(tmpFilePath, false, "")
+
+		case key.Matches(msg, studyKeys.Edit):
+			currentCard := s.cards[s.cardIndex]
+			tmpFilePath, err := data.CreateTmpFileWithCard(currentCard)
+			if err != nil {
+				return s, nil
+			}
+
+			return s, data.LaunchEditor(tmpFilePath, true, currentCard.ID)
 		}
 
 		// Handle viewport scrolling and rating keys when showing the answer
@@ -365,14 +469,14 @@ func (s *StudyScreen) View() string {
 		sb.WriteString("\n\n")
 
 		// Help text for rating state
-		sb.WriteString(studyHelpStyle.Render("\t1-5: Rate Card" + "\tj/k: Scroll" + "\tb: Back to Decks" + "\tq: Quit"))
+		sb.WriteString(studyHelpStyle.Render("\t1-5: Rate Card" + "\tj/k: Scroll" + "\ta/e: Add/Edit" + "\tb: Back to Decks" + "\tq: Quit"))
 	} else {
 		// Show the prompt to reveal the answer
 		sb.WriteString(revealPromptStyle.Render("Press SPACE to reveal answer"))
 		sb.WriteString("\n\n")
 
 		// Help text for question state
-		sb.WriteString(studyHelpStyle.Render("\tSPACE: Show Answer" + "\t<: Skip" + "\tb: Back to Decks" + "\tq: Quit"))
+		sb.WriteString(studyHelpStyle.Render("\tSPACE: Show Answer" + "\t<: Skip" + "\ta/e: Add/Edit" + "\tb: Back to Decks" + "\tq: Quit"))
 	}
 
 	return sb.String()

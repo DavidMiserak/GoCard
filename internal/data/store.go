@@ -142,6 +142,17 @@ func (s *Store) GetDueCardsForDeck(deckID string) []model.Card {
 	return dueCards
 }
 
+// AddCardToDeck adds a card to deck in the store and returns whether it was found
+func (s *Store) AddCardToDeck(card model.Card) bool {
+	for i, deck := range s.Decks {
+		if deck.ID == card.DeckID {
+			s.Decks[i].Cards = append(s.Decks[i].Cards, card)
+			return true
+		}
+	}
+	return false
+}
+
 // UpdateCard updates a card in the store and returns whether it was found
 func (s *Store) UpdateCard(updatedCard model.Card) bool {
 	// Find and update the card in its deck
