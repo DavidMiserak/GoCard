@@ -4,9 +4,9 @@ package ui
 
 import (
 	"fmt"
-	"strings"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -15,7 +15,6 @@ import (
 
 	"github.com/DavidMiserak/GoCard/internal/data"
 	"github.com/DavidMiserak/GoCard/internal/model"
-
 )
 
 // Key mapping for study screen
@@ -144,85 +143,81 @@ func (s *StudyScreen) Init() tea.Cmd {
 	return nil
 }
 
+func (s *StudyScreen) handleEditorResponse(msg data.EditorResponse) error {
+	defer os.Remove(msg.FileName) // All cases should cleanup temp file
+
+	// When returning from $EDITOR from add/edit cards
+	if msg.ExitCode != nil {
+		return fmt.Errorf("editor returned error %v", msg.ExitCode)
+	}
+
+	// successfully created tmp file with $EDITOR; parse into card to ensure valid
+	tempMarkdownCard, err := data.ParseMarkdownFile(msg.FileName)
+	if err != nil {
+		return fmt.Errorf("failed to parse card: %v", err)
+	}
+
+	// Ensure card isn't empty
+	questionIsEmpty := strings.TrimSpace(tempMarkdownCard.Question) == ""
+	answerIsEmpty := strings.TrimSpace(tempMarkdownCard.Answer) == ""
+	if questionIsEmpty || answerIsEmpty {
+		return fmt.Errorf("invalid card: both question & answer required")
+	}
+
+	// Convert from *MarkdownCard to model.Card
+	newCard := tempMarkdownCard.ToModelCard(s.deckID)
+
+	if msg.IsEdit {
+		// newCard.ID points to temp file. Point it to original so can overwrite
+		newCard.ID = msg.CardID
+
+		// Update existing card
+		err = data.WriteCard(newCard, msg.CardID)
+		if err != nil {
+			return fmt.Errorf("error saving card: %v", err)
+		}
+
+		// Overwrite card in store and study screen's deck
+		s.store.UpdateCard(newCard)
+		s.cards[s.cardIndex] = newCard
+
+	} else {
+		// Creating a new card, autogenerate unique filename based on time
+		filename := filepath.Join(s.deckID, fmt.Sprintf("card_%d.md", time.Now().Unix()))
+		newCard.ID = filename // use filename as cardID
+
+		err = data.WriteCard(newCard, filename)
+		if err != nil {
+			return fmt.Errorf("error saving card: %v", err)
+		}
+
+		// Add to store and study screen's state deck for persistence
+
+		// store's in memory deck
+		s.store.AddCardToDeck(newCard)
+
+		// Local study session
+		// TODO: GoCard currently shows ALL cards during study, not just due cards
+		// If we filter by due date, this should also check newCard.NextReview
+		s.cards = append(s.cards, newCard)
+		s.totalCards = len(s.cards)
+		s.cardIndex = len(s.cards) - 1 // jump immediately to new card
+
+	}
+	return nil
+}
+
 // Update handles user input and updates the model
 func (s *StudyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 
-	// When returning from $EDITOR from add/edit cards
-	case data.EditorResponse: {
-		if msg.ExitCode != nil {
-			// Editor failed
-			fmt.Printf("Editor error: %v\n", msg.ExitCode)
-			os.Remove(msg.FileName) // ignore os.Remove error
-			return s, nil
-		}
-
-		// successfully created tmp file with $EDITOR; parse into card to ensure valid
-		tempMarkdownCard, err := data.ParseMarkdownFile(msg.FileName)
+	case data.EditorResponse:
+		err := s.handleEditorResponse(msg)
 		if err != nil {
-			fmt.Printf("Error parsing card: %v\n", err)
-			os.Remove(msg.FileName)
-			return s, nil
+			fmt.Printf("editor error: %v", err)
 		}
-
-		// Ensure card isn't empty
-		if strings.TrimSpace(tempMarkdownCard.Question) == "" || strings.TrimSpace(tempMarkdownCard.Answer) == "" {
-			fmt.Printf("Attempting to add/edit empty card. Both question/answer are required")
-			os.Remove(msg.FileName)
-			return s, nil
-		}
-
-		// Convert from *MarkdownCard to model.Card
-		newCard := tempMarkdownCard.ToModelCard(s.deckID)
-
-		if msg.IsEdit {
-			// newCard.ID points to temp file. Point it to original so can overwrite
-			newCard.ID = msg.CardID
-
-			// Update existing card
-			err = data.WriteCard(newCard, msg.CardID)
-			if err != nil {
-				fmt.Printf("Error saving card: %v\n", err)
-				os.Remove(msg.FileName)
-				return s, nil
-			}
-
-			// Overwrite card in store and study screen's deck
-			s.store.UpdateCard(newCard)
-			s.cards[s.cardIndex] = newCard
-			
-		} else {
-			// Creating a new card, autogenerate unique filename based on time
-			filename := filepath.Join(s.deckID, fmt.Sprintf("card_%d.md", time.Now().Unix()))
-			newCard.ID = filename // use filename as cardID
-
-			err = data.WriteCard(newCard, filename)
-			if err != nil {
-				fmt.Printf("Error saving card: %v\n", err)
-				os.Remove(msg.FileName)
-				return s, nil
-			}
-
-			// Add to store and study screen's state deck for persistence
-
-			// store's in memory deck
-			s.store.AddCardToDeck(newCard)
-
-			// Local study session
-			// TODO: GoCard currently shows ALL cards during study, not just due cards
-			// If we filter by due date, this should also check newCard.NextReview
-			s.cards = append(s.cards, newCard)
-			s.totalCards = len(s.cards)
-			s.cardIndex = len(s.cards) - 1 // jump immediately to new card
-
-		}
-
-		// Successfully written file. can delete temp
-		os.Remove(msg.FileName)
-	}
-
 	case tea.KeyMsg:
 		// If in finished state, any key navigates to stats screen
 		if s.state == FinishedStudying {

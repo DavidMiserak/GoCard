@@ -3,6 +3,8 @@
 package ui
 
 import (
+	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -348,5 +350,95 @@ func TestStudyScreenAllCardsStudied(t *testing.T) {
 	// Check that we're now in the FinishedStudying state
 	if study.state != FinishedStudying {
 		t.Errorf("Expected state to be FinishedStudying when all cards are studied, got %v", study.state)
+	}
+}
+
+func TestHandleEditorResponse_Success(t *testing.T) {
+	mockValidCardContent := `---
+tags: [test]
+created: 2025-01-01
+review_interval: 0
+---
+
+# Question
+
+Fake Question
+
+## Answer
+
+Fake Answer
+`
+	tempFile, err := os.CreateTemp("", "test-*.md")
+	if err != nil {
+		t.Fatal("Couldn't create temp file")
+	}
+	defer os.Remove(tempFile.Name())
+	if _, err := tempFile.WriteString(mockValidCardContent); err != nil {
+		t.Fatalf("Couldnt write to temp file")
+	}
+	tempFile.Close()
+
+	mockEditorResponse := data.EditorResponse{
+		FileName: tempFile.Name(),
+		ExitCode: nil, // success
+		IsEdit:   false,
+		CardID:   "",
+	}
+
+	fakeStore := data.NewStore()
+	fakeStudy := NewStudyScreen(fakeStore, fakeStore.GetDecks()[0].ID)
+	initialCardCount := len(fakeStudy.cards)
+	err = fakeStudy.handleEditorResponse(mockEditorResponse)
+	if err != nil {
+		t.Errorf("Got err %v when expected success", err)
+	}
+
+	if len(fakeStudy.cards) > initialCardCount {
+		newCard := fakeStudy.cards[len(fakeStudy.cards)-1]
+		defer os.Remove(newCard.ID) // Clean up the generated card file
+	}
+}
+
+func TestHandleEditorResponse_Failure(t *testing.T) {
+	tempFile, err := data.CreateTmpFileWithTemplate()
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tempFile)
+
+	mockEditorResponse := data.EditorResponse{
+		FileName: tempFile,
+		ExitCode: fmt.Errorf("editor exited with code 1"), // fail
+		IsEdit:   false,
+		CardID:   "",
+	}
+
+	fakeStore := data.NewStore()
+	fakeStudy := NewStudyScreen(fakeStore, fakeStore.GetDecks()[0].ID)
+	err = fakeStudy.handleEditorResponse(mockEditorResponse)
+	if err == nil {
+		t.Errorf("Got success %v when expected error", err)
+	}
+}
+
+func TestHandleEditorResponse_BadCard(t *testing.T) {
+	tempFile, err := data.CreateTmpFileWithTemplate() // empty template should throw bad card
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tempFile)
+
+	mockEditorResponse := data.EditorResponse{
+		FileName: tempFile,
+		ExitCode: nil, // success
+		IsEdit:   false,
+		CardID:   "",
+	}
+
+	fakeStore := data.NewStore()
+	fakeStudy := NewStudyScreen(fakeStore, fakeStore.GetDecks()[0].ID)
+	err = fakeStudy.handleEditorResponse(mockEditorResponse)
+	if err == nil {
+		t.Errorf("Expected empty card error, but got success")
 	}
 }
