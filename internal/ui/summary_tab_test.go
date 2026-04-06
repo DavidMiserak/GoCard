@@ -148,42 +148,40 @@ func TestGetCardsStudiedPerDay(t *testing.T) {
 }
 
 func TestRenderHorizontalBarChart(t *testing.T) {
-	// Create test data with specific days that match our format
+	// The function generates date labels from time.Now(), so test data
+	// must use dates relative to today to match those labels.
+	today := time.Now()
+	day0 := today.Format("Jan 2")
+	day1 := today.AddDate(0, 0, -1).Format("Jan 2")
+	day2 := today.AddDate(0, 0, -2).Format("Jan 2")
+
 	data := map[string]int{
-		"Mar 29": 10,
-		"Mar 30": 20,
-		"Mar 31": 5,
+		day0: 10,
+		day1: 20,
+		day2: 5,
 	}
 
 	// Render the chart
 	result := renderHorizontalBarChart(data, 10)
 
-	// Check for presence of key elements rather than exact matches
-	if !strings.Contains(result, "Mar") {
-		t.Error("Expected chart to contain month abbreviation 'Mar'")
+	// Check that the output contains the date labels
+	if !strings.Contains(result, day0) {
+		t.Errorf("Expected chart to contain today's date %q", day0)
+	}
+	if !strings.Contains(result, day1) {
+		t.Errorf("Expected chart to contain yesterday's date %q", day1)
+	}
+	if !strings.Contains(result, day2) {
+		t.Errorf("Expected chart to contain day-before-yesterday's date %q", day2)
 	}
 
-	if !strings.Contains(result, "29") {
-		t.Error("Expected chart to contain day '29'")
-	}
-
-	if !strings.Contains(result, "30") {
-		t.Error("Expected chart to contain day '30'")
-	}
-
-	if !strings.Contains(result, "31") {
-		t.Error("Expected chart to contain day '31'")
-	}
-
-	// Check that the output contains the values (may be formatted differently)
+	// Check that the output contains the values
 	if !strings.Contains(result, "10") {
 		t.Error("Expected chart to contain value '10'")
 	}
-
 	if !strings.Contains(result, "20") {
 		t.Error("Expected chart to contain value '20'")
 	}
-
 	if !strings.Contains(result, "5") {
 		t.Error("Expected chart to contain value '5'")
 	}
