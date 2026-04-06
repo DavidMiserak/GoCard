@@ -179,10 +179,67 @@ func (s *Store) SaveCardReview(card model.Card, rating int) bool {
 	// Update the card in the store
 	cardUpdated := s.UpdateCard(updatedCard)
 
+	// Persist the updated card to its markdown file immediately
+	if cardUpdated {
+		if err := s.SaveCardToMarkdown(updatedCard); err != nil {
+			fmt.Printf("Warning: failed to persist card review to file: %v\n", err)
+		}
+	}
+
 	// Update the deck's last studied timestamp
 	deckUpdated := s.UpdateDeckLastStudied(card.DeckID)
 
 	return cardUpdated && deckUpdated
+}
+
+// SaveCardToMarkdown saves SRS metadata for a single card back to its markdown file.
+// It performs a surgical update of only the SRS fields in the frontmatter.
+func (s *Store) SaveCardToMarkdown(card model.Card) error {
+	// Skip cards without a proper file path
+	if card.ID == "" || (!filepath.IsAbs(card.ID) &&
+		!strings.Contains(card.ID, "/") && !strings.Contains(card.ID, "\\")) {
+		return nil
+	}
+
+	// Verify the file exists before updating
+	if _, err := os.Stat(card.ID); os.IsNotExist(err) {
+		return nil
+	}
+
+	// Read the existing file content
+	content, err := os.ReadFile(card.ID)
+	if err != nil {
+		return fmt.Errorf("error reading card file %s: %w", card.ID, err)
+	}
+
+	// Parse the content to extract front matter
+	contentStr := string(content)
+	fmStart := strings.Index(contentStr, "---")
+	if fmStart < 0 {
+		return nil
+	}
+
+	fmEnd := strings.Index(contentStr[fmStart+3:], "---")
+	if fmEnd < 0 {
+		return nil
+	}
+	fmEnd = fmStart + 3 + fmEnd
+
+	frontMatter := contentStr[fmStart : fmEnd+3]
+	bodyContent := contentStr[fmEnd+3:]
+
+	// Update only the SRS-specific fields in front matter
+	updatedFrontMatter := updateFrontMatterFields(frontMatter, card)
+
+	// Combine updated front matter with original body content
+	updatedContent := updatedFrontMatter + bodyContent
+
+	// Write back to file
+	if err := os.WriteFile(card.ID, []byte(updatedContent), 0644); err != nil {
+		return fmt.Errorf("error writing updated card file %s: %w", card.ID, err)
+	}
+
+	return nil
 }
 
 // SaveDeckToMarkdown saves SRS metadata for all cards in a deck back to their markdown files
@@ -195,55 +252,12 @@ func (s *Store) SaveDeckToMarkdown(deckID string) error {
 
 	// Only proceed if the deck ID looks like a valid directory path
 	if !filepath.IsAbs(deck.ID) && !strings.Contains(deck.ID, "/") && !strings.Contains(deck.ID, "\\") {
-		// This appears to be a dummy deck without proper file paths
 		return nil
 	}
 
-	// For each card in the deck, update its SRS metadata
 	for _, card := range deck.Cards {
-		// Skip cards without a proper file path
-		if card.ID == "" || (!filepath.IsAbs(card.ID) &&
-			!strings.Contains(card.ID, "/") && !strings.Contains(card.ID, "\\")) {
-			continue
-		}
-
-		// Verify the file exists before updating
-		if _, err := os.Stat(card.ID); os.IsNotExist(err) {
-			// Skip non-existent files
-			continue
-		}
-
-		// Read the existing file content
-		content, err := os.ReadFile(card.ID)
-		if err != nil {
-			return fmt.Errorf("error reading card file %s: %w", card.ID, err)
-		}
-
-		// Parse the content to extract front matter
-		contentStr := string(content)
-		fmStart := strings.Index(contentStr, "---")
-		if fmStart < 0 {
-			continue // No front matter found
-		}
-
-		fmEnd := strings.Index(contentStr[fmStart+3:], "---")
-		if fmEnd < 0 {
-			continue // Incomplete front matter
-		}
-		fmEnd = fmStart + 3 + fmEnd
-
-		frontMatter := contentStr[fmStart : fmEnd+3]
-		bodyContent := contentStr[fmEnd+3:]
-
-		// Update only the SRS-specific fields in front matter
-		updatedFrontMatter := updateFrontMatterFields(frontMatter, card)
-
-		// Combine updated front matter with original body content
-		updatedContent := updatedFrontMatter + bodyContent
-
-		// Write back to file
-		if err := os.WriteFile(card.ID, []byte(updatedContent), 0644); err != nil {
-			return fmt.Errorf("error writing updated card file %s: %w", card.ID, err)
+		if err := s.SaveCardToMarkdown(card); err != nil {
+			return err
 		}
 	}
 
