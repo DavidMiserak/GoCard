@@ -54,7 +54,7 @@ func NewMainMenu(store *data.Store) *MainMenu {
 	}
 
 	return &MainMenu{
-		items:    []string{"Study", "Browse Decks", "Statistics", "Quit"},
+		items:    []string{"Study", "Browse Decks", "Statistics", "Settings", "Quit"},
 		cursor:   0,
 		selected: -1,
 		store:    store,
@@ -101,7 +101,11 @@ func (m MainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Navigate to statistics screen
 				return NewStatisticsScreen(m.store), nil
 
-			case 3: // Quit
+			case 3: // Settings
+				// Navigate to settings screen
+				return NewSettingsScreen(m.store), nil
+
+			case 4: // Quit
 				return m, tea.Quit
 			}
 		}
