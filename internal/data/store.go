@@ -170,6 +170,62 @@ func (s *Store) UpdateDeckLastStudied(deckID string) bool {
 	return false
 }
 
+// ToggleDeckAlgorithm atomically converts all cards in a deck to a different algorithm
+// Returns success/failure status and count of cards converted
+// On error, the deck is rolled back to its original state (in-memory backup)
+func (s *Store) ToggleDeckAlgorithm(deckID, targetAlgorithm string) (success bool, cardsConverted int, err error) {
+	// Find the deck
+	deckIndex := -1
+	for i, deck := range s.Decks {
+		if deck.ID == deckID {
+			deckIndex = i
+			break
+		}
+	}
+
+	if deckIndex < 0 {
+		return false, 0, fmt.Errorf("deck with ID %s not found", deckID)
+	}
+
+	deck := &s.Decks[deckIndex]
+	previousAlgorithm := deck.Algorithm
+	if previousAlgorithm == "" {
+		previousAlgorithm = "SM2"
+	}
+
+	// Create backup of all cards before conversion
+	backup := make([]model.Card, len(deck.Cards))
+	for i, card := range deck.Cards {
+		backup[i] = card
+	}
+
+	// Perform the toggle operation in-memory
+	toggleResult := srs.ToggleDeckAlgorithm(deck, targetAlgorithm)
+	if !toggleResult.Success {
+		return false, 0, toggleResult.Error
+	}
+
+	// Try to persist all cards to disk atomically
+	// If any write fails, rollback
+	for _, card := range deck.Cards {
+		// Skip cards without proper file paths
+		if card.ID == "" || (!filepath.IsAbs(card.ID) &&
+			!strings.Contains(card.ID, "/") && !strings.Contains(card.ID, "\\")) {
+			continue
+		}
+
+		// Try to update the card file
+		if err := UpdateCardFile(card); err != nil {
+			// Write failed: rollback all changes
+			srs.RollbackDeckAlgorithm(deck, backup, previousAlgorithm)
+			return false, 0, fmt.Errorf("failed to persist card %s during toggle: %w", card.ID, err)
+		}
+	}
+
+	// All writes succeeded
+	return true, toggleResult.CardsConverted, nil
+}
+
 // SaveCardReview updates a card with its new review data and updates
 // the parent deck's LastStudied timestamp
 func (s *Store) SaveCardReview(card model.Card, rating int) bool {
