@@ -173,15 +173,18 @@ func (s *Store) UpdateDeckLastStudied(deckID string) bool {
 // SaveCardReview updates a card with its new review data and updates
 // the parent deck's LastStudied timestamp
 func (s *Store) SaveCardReview(card model.Card, rating int) bool {
-	// Use the SRS algorithm to schedule the card
-	updatedCard := srs.ScheduleCard(card, rating)
+	// Use the SRS algorithm to schedule the card (works with pointer)
+	if err := srs.ScheduleCard(&card, rating); err != nil {
+		fmt.Printf("Warning: failed to schedule card: %v\n", err)
+		return false
+	}
 
 	// Update the card in the store
-	cardUpdated := s.UpdateCard(updatedCard)
+	cardUpdated := s.UpdateCard(card)
 
 	// Persist the updated card to its markdown file immediately
 	if cardUpdated {
-		if err := s.SaveCardToMarkdown(updatedCard); err != nil {
+		if err := s.SaveCardToMarkdown(card); err != nil {
 			fmt.Printf("Warning: failed to persist card review to file: %v\n", err)
 		}
 	}

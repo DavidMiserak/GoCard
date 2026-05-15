@@ -3,6 +3,7 @@
 package srs
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/DavidMiserak/GoCard/internal/model"
@@ -18,36 +19,46 @@ const (
 	defaultInterval = 1    // Default interval for new cards
 )
 
-// ScheduleCard updates a card based on the user's rating (1-5)
-// and returns the updated card
-//
-// Rating scale:
-// 1 - Blackout (complete failure)
-// 2 - Wrong (significant difficulty)
-// 3 - Hard (correct with difficulty)
-// 4 - Good (correct with some effort)
-// 5 - Easy (correct with no effort)
-func ScheduleCard(card model.Card, rating int) model.Card {
-	// Update the last reviewed time
-	card.LastReviewed = time.Now()
+// ScheduleResult contains the output of a scheduling operation
+type ScheduleResult struct {
+	NextReviewDate time.Time // Next time card should be reviewed
+	Interval       int       // Interval in days until next review
+	EaseOrRetention float64  // SM2: Ease (1.3-4.0), FSRS: Retention (0-1)
+	LastReview     time.Time // When the card was last reviewed
+}
 
-	// Store the user's rating
+// Algorithm interface defines the contract for different SRS algorithms
+type Algorithm interface {
+	// Schedule computes next review date and updates card state
+	// Returns ScheduleResult with next review date and updated parameters
+	Schedule(card *model.Card, rating int) ScheduleResult
+}
+
+// SM2Scheduler implements the Algorithm interface for SM-2
+type SM2Scheduler struct{}
+
+// NewSM2Scheduler creates a new SM2Scheduler
+func NewSM2Scheduler() *SM2Scheduler {
+	return &SM2Scheduler{}
+}
+
+// Schedule implements the Algorithm interface for SM-2
+func (s *SM2Scheduler) Schedule(card *model.Card, rating int) ScheduleResult {
+	now := time.Now()
+	card.LastReviewed = now
 	card.Rating = rating
 
 	// Calculate new interval and ease based on rating
 	switch rating {
 	case 1: // Blackout
-		// Reset the interval, reduce ease
 		card.Interval = 1
 		card.Ease = maxFloat(card.Ease-0.3, minEase)
 
 	case 2: // Wrong
-		// Reset the interval, reduce ease
 		card.Interval = 1
 		card.Ease = maxFloat(card.Ease-0.2, minEase)
 
 	case 3: // Hard
-		// Slight increase in interval, reduce ease
 		if card.Interval == 0 {
 			card.Interval = 1
 		} else {
@@ -56,7 +67,6 @@ func ScheduleCard(card model.Card, rating int) model.Card {
 		card.Ease = maxFloat(card.Ease-easeModifier, minEase)
 
 	case 4: // Good
-		// Standard increase in interval
 		switch card.Interval {
 		case 0:
 			card.Interval = defaultInterval
@@ -65,10 +75,8 @@ func ScheduleCard(card model.Card, rating int) model.Card {
 		default:
 			card.Interval = int(float64(card.Interval) * card.Ease)
 		}
-		// Ease remains the same
 
 	case 5: // Easy
-		// Larger increase in interval, increase ease
 		switch card.Interval {
 		case 0:
 			card.Interval = defaultInterval * 2
@@ -80,23 +88,122 @@ func ScheduleCard(card model.Card, rating int) model.Card {
 		card.Ease = minFloat(card.Ease+easeModifier, 4.0)
 	}
 
-	// Cap the interval at the maximum
 	card.Interval = minInt(card.Interval, maxInterval)
+	card.NextReview = now.AddDate(0, 0, card.Interval)
 
-	// Set the next review date
-	card.NextReview = time.Now().AddDate(0, 0, card.Interval)
+	return ScheduleResult{
+		NextReviewDate:  card.NextReview,
+		Interval:        card.Interval,
+		EaseOrRetention: card.Ease,
+		LastReview:      card.LastReviewed,
+	}
+}
 
-	return card
+// FSRSScheduler implements the Algorithm interface for FSRS (placeholder)
+type FSRSScheduler struct{}
+
+// NewFSRSScheduler creates a new FSRSScheduler
+func NewFSRSScheduler() *FSRSScheduler {
+	return &FSRSScheduler{}
+}
+
+// Schedule implements the Algorithm interface for FSRS
+// MVP uses approximate formula; post-MVP parameter tuning will improve accuracy
+func (s *FSRSScheduler) Schedule(card *model.Card, rating int) ScheduleResult {
+	now := time.Now()
+	card.LastReviewed = now
+	card.Rating = rating
+
+	// Approximate FSRS formula (placeholder for MVP)
+	// Real FSRS has 17 parameters; this uses fixed approximate values
+	// Rates response difficulty: 1-5 maps to different retention targets
+
+	retentionTarget := 0.9
+	switch rating {
+	case 1: // Blackout
+		retentionTarget = 0.2
+	case 2: // Wrong
+		retentionTarget = 0.4
+	case 3: // Hard
+		retentionTarget = 0.6
+	case 4: // Good
+		retentionTarget = 0.85
+	case 5: // Easy
+		retentionTarget = 0.95
+	}
+
+	// Update retention parameter
+	card.Retention = retentionTarget
+
+	// Compute interval based on retention target
+	// Approximate formula: higher retention = longer interval
+	if card.Interval == 0 {
+		card.Interval = 1
+	} else {
+		// FSRS tends to produce longer intervals for high retention
+		card.Interval = int(float64(card.Interval) * (1.0 + retentionTarget))
+	}
+
+	card.Interval = minInt(card.Interval, maxInterval)
+	card.NextReview = now.AddDate(0, 0, card.Interval)
+
+	return ScheduleResult{
+		NextReviewDate:  card.NextReview,
+		Interval:        card.Interval,
+		EaseOrRetention: card.Retention,
+		LastReview:      card.LastReviewed,
+	}
+}
+
+// ScheduleCard dispatcher routes to the appropriate scheduler based on card.Algorithm
+func ScheduleCard(card *model.Card, rating int) error {
+	if card == nil {
+		return fmt.Errorf("card is nil")
+	}
+
+	// Default to SM2 if algorithm is not set
+	algorithm := card.Algorithm
+	if algorithm == "" {
+		algorithm = "SM2"
+	}
+
+	var scheduler Algorithm
+	switch algorithm {
+	case "SM2":
+		scheduler = NewSM2Scheduler()
+	case "FSRS":
+		scheduler = NewFSRSScheduler()
+	default:
+		return fmt.Errorf("unknown algorithm: %s", algorithm)
+	}
+
+	result := scheduler.Schedule(card, rating)
+
+	// Update card with scheduled values
+	card.NextReview = result.NextReviewDate
+	card.Interval = result.Interval
+
+	// Update the appropriate parameter based on algorithm
+	switch algorithm {
+	case "SM2":
+		card.Ease = result.EaseOrRetention
+	case "FSRS":
+		card.Retention = result.EaseOrRetention
+	}
+
+	return nil
 }
 
 // InitializeNewCard initializes a new card with default SRS values
-func InitializeNewCard(card model.Card) model.Card {
-	// Set default values for a new card
+func InitializeNewCard(card *model.Card) *model.Card {
 	if card.Ease == 0 {
 		card.Ease = defaultEase
 	}
+	if card.Algorithm == "" {
+		card.Algorithm = "SM2"
+	}
 	card.Interval = 0
-	card.NextReview = time.Now() // Due immediately
+	card.NextReview = time.Now()
 
 	return card
 }
