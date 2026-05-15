@@ -314,3 +314,110 @@ Go testing is a framework for writing automated tests in Go.
 		t.Errorf("Expected updated interval %d, got %d", updatedCard.Interval, readCard.FrontMatter.ReviewInterval)
 	}
 }
+
+func TestCardAlgorithmRoundtrip(t *testing.T) {
+	// Create a temporary directory
+	tempDir, err := os.MkdirTemp("", "algorithm-roundtrip-test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir) //nolint:errcheck
+
+	// Create a card with algorithm and retention fields
+	testPath := filepath.Join(tempDir, "algorithm-test.md")
+	now := time.Now()
+	originalCard := model.Card{
+		ID:           testPath,
+		Question:     "What is FSRS?",
+		Answer:       "Free Spaced Repetition Scheduler",
+		DeckID:       "test-deck",
+		LastReviewed: now,
+		NextReview:   now.AddDate(0, 0, 3),
+		Ease:         2.5,
+		Interval:     3,
+		Rating:       4,
+		Algorithm:    "FSRS",
+		Retention:    0.5,
+		EaseBackup:   2.5,
+	}
+
+	// Write card to file
+	err = WriteCard(originalCard, testPath)
+	if err != nil {
+		t.Fatalf("WriteCard error: %v", err)
+	}
+
+	// Read card back from file
+	readCard, err := ParseMarkdownFile(testPath)
+	if err != nil {
+		t.Fatalf("Failed to read back card: %v", err)
+	}
+
+	// Convert to model card
+	modelCard := readCard.ToModelCard(originalCard.DeckID)
+
+	// Verify algorithm field
+	if modelCard.Algorithm != originalCard.Algorithm {
+		t.Errorf("Expected algorithm %q, got %q", originalCard.Algorithm, modelCard.Algorithm)
+	}
+
+	// Verify retention field
+	if modelCard.Retention != originalCard.Retention {
+		t.Errorf("Expected retention %f, got %f", originalCard.Retention, modelCard.Retention)
+	}
+
+	// Verify ease_backup field
+	if modelCard.EaseBackup != originalCard.EaseBackup {
+		t.Errorf("Expected ease_backup %f, got %f", originalCard.EaseBackup, modelCard.EaseBackup)
+	}
+
+	// Verify SM-2 fields still work
+	if modelCard.Ease != originalCard.Ease {
+		t.Errorf("Expected ease %f, got %f", originalCard.Ease, modelCard.Ease)
+	}
+}
+
+func TestAlgorithmDefaultsToSM2(t *testing.T) {
+	// Create a temporary directory
+	tempDir, err := os.MkdirTemp("", "algorithm-default-test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir) //nolint:errcheck
+
+	// Create an old-style markdown file without algorithm field
+	testPath := filepath.Join(tempDir, "old-style.md")
+	oldStyleContent := `---
+tags: []
+created: 2025-03-22
+last_reviewed: 2025-03-22
+review_interval: 3
+difficulty: 2.5
+---
+
+# Question
+
+What is SM-2?
+
+## Answer
+
+SM-2 is the SuperMemo 2 algorithm.
+`
+	if err := os.WriteFile(testPath, []byte(oldStyleContent), 0644); err != nil {
+		t.Fatalf("Failed to write file: %v", err)
+	}
+
+	// Read old-style card
+	readCard, err := ParseMarkdownFile(testPath)
+	if err != nil {
+		t.Fatalf("Failed to read card: %v", err)
+	}
+
+	// Convert to model card
+	modelCard := readCard.ToModelCard("test-deck")
+
+	// Verify algorithm defaults to SM2
+	if modelCard.Algorithm != "SM2" {
+		t.Errorf("Expected algorithm default to SM2, got %q", modelCard.Algorithm)
+	}
+}

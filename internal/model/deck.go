@@ -12,4 +12,5 @@ type Deck struct {
 	Cards       []Card // TODO: Make a tool to import Markdown files in directory to cards
 	CreatedAt   time.Time
 	LastStudied time.Time
+	Algorithm   string // "SM2" (default) or "FSRS", app-wide algorithm choice
 }

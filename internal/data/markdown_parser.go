@@ -22,6 +22,9 @@ type FrontMatter struct {
 	LastReviewed   time.Time `yaml:"last_reviewed"`
 	ReviewInterval int       `yaml:"review_interval"`
 	Difficulty     float64   `yaml:"difficulty"`
+	Algorithm      string    `yaml:"algorithm"`
+	Retention      float64   `yaml:"retention"`
+	EaseBackup     float64   `yaml:"ease_backup"`
 }
 
 // MarkdownCard represents a card in markdown format
@@ -117,6 +120,12 @@ func (mc *MarkdownCard) ToModelCard(deckID string) model.Card {
 		ease = 2.5 // Default difficulty value
 	}
 
+	// Default algorithm to SM2 for backwards compatibility
+	algorithm := mc.FrontMatter.Algorithm
+	if algorithm == "" {
+		algorithm = "SM2"
+	}
+
 	return model.Card{
 		ID:           mc.Path,
 		Question:     mc.Question,
@@ -127,6 +136,9 @@ func (mc *MarkdownCard) ToModelCard(deckID string) model.Card {
 		Ease:         ease,
 		Interval:     interval,
 		Rating:       0, // Default to 0 for new cards
+		Algorithm:    algorithm,
+		Retention:    mc.FrontMatter.Retention,
+		EaseBackup:   mc.FrontMatter.EaseBackup,
 	}
 }
 
@@ -195,6 +207,7 @@ func CreateDeckFromDir(dirPath string) (*model.Deck, error) {
 		CreatedAt:   time.Now(),
 		LastStudied: time.Now(),
 		Cards:       []model.Card{},
+		Algorithm:   "SM2", // Default algorithm
 	}
 
 	// Import markdown files

@@ -19,6 +19,12 @@ func CardToMarkdown(card model.Card) *MarkdownCard {
 	// Extract tags (if stored in the card)
 	tags := []string{}
 
+	// Default algorithm to SM2 if not set
+	algorithm := card.Algorithm
+	if algorithm == "" {
+		algorithm = "SM2"
+	}
+
 	// Create MarkdownCard
 	mc := &MarkdownCard{
 		Path: card.ID,
@@ -28,6 +34,9 @@ func CardToMarkdown(card model.Card) *MarkdownCard {
 			LastReviewed:   card.LastReviewed,
 			ReviewInterval: card.Interval,
 			Difficulty:     card.Ease,
+			Algorithm:      algorithm,
+			Retention:      card.Retention,
+			EaseBackup:     card.EaseBackup,
 		},
 		Question: card.Question,
 		Answer:   card.Answer,
@@ -174,13 +183,21 @@ func UpdateCardFile(card model.Card) error {
 		return fmt.Errorf("error reading existing card: %w", err)
 	}
 
-	// Update with new data while preserving tags and created date
+	// Update with new data while preserving metadata
 	mc := CardToMarkdown(card)
 	mc.FrontMatter.Tags = existingCard.FrontMatter.Tags
 
 	// Keep original creation date if it exists
 	if !existingCard.FrontMatter.Created.IsZero() {
 		mc.FrontMatter.Created = existingCard.FrontMatter.Created
+	}
+
+	// Preserve algorithm and ease_backup from existing card (unless explicitly updated)
+	if existingCard.FrontMatter.Algorithm != "" {
+		mc.FrontMatter.Algorithm = existingCard.FrontMatter.Algorithm
+	}
+	if existingCard.FrontMatter.EaseBackup != 0 {
+		mc.FrontMatter.EaseBackup = existingCard.FrontMatter.EaseBackup
 	}
 
 	// Write updated card
