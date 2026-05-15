@@ -192,11 +192,10 @@ func UpdateCardFile(card model.Card) error {
 		mc.FrontMatter.Created = existingCard.FrontMatter.Created
 	}
 
-	// Preserve algorithm and ease_backup from existing card (unless explicitly updated)
-	if existingCard.FrontMatter.Algorithm != "" {
-		mc.FrontMatter.Algorithm = existingCard.FrontMatter.Algorithm
-	}
-	if existingCard.FrontMatter.EaseBackup != 0 {
+	// Preserve ease_backup from existing card (algorithm is updated, ease_backup is only updated on toggle)
+	// Allow algorithm to be updated (this is needed for toggle operations)
+	if existingCard.FrontMatter.EaseBackup != 0 && card.EaseBackup == 0 {
+		// Only preserve ease_backup if not being explicitly set
 		mc.FrontMatter.EaseBackup = existingCard.FrontMatter.EaseBackup
 	}
 
